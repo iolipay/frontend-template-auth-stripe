@@ -3,15 +3,35 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { AuthService } from "@/services/auth.service";
 
 export default function Register() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Implement registration logic
+    setError(null);
+
+    if (password !== confirmPassword) {
+      setError("Passwords do not match");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      await AuthService.register({ email, password });
+      router.push("/auth/login?registered=true");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Registration failed");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -37,6 +57,12 @@ export default function Register() {
           <h1 className="text-2xl font-bold mb-6 text-center">
             Create Account
           </h1>
+
+          {error && (
+            <div className="mb-4 p-3 text-sm text-red-500 bg-red-100 dark:bg-red-900/30 rounded-md">
+              {error}
+            </div>
+          )}
 
           <div className="space-y-4">
             <div>
@@ -89,9 +115,10 @@ export default function Register() {
 
             <button
               type="submit"
-              className="w-full py-2 px-4 bg-foreground text-background rounded-md hover:bg-[#383838] dark:hover:bg-[#ccc] transition-colors"
+              disabled={loading}
+              className="w-full py-2 px-4 bg-foreground text-background rounded-md hover:bg-[#383838] dark:hover:bg-[#ccc] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Register
+              {loading ? "Registering..." : "Register"}
             </button>
           </div>
         </form>
