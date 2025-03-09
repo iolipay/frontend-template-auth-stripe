@@ -3,31 +3,35 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { AuthService } from "@/services/auth.service";
 
-export default function Login() {
+export default function ResetPassword({
+  params,
+}: {
+  params: { token: string };
+}) {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-
-  // Show success messages
-  const justRegistered = searchParams.get("registered") === "true";
-  const justReset = searchParams.get("reset") === "success";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
+    if (password !== confirmPassword) {
+      setError("Passwords do not match");
+      return;
+    }
+
     try {
       setLoading(true);
-      await AuthService.login(email, password);
-      router.push("/dashboard");
+      await AuthService.resetPassword(params.token, password);
+      router.push("/auth/login?reset=success");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Login failed");
+      setError(err instanceof Error ? err.message : "Failed to reset password");
     } finally {
       setLoading(false);
     }
@@ -53,19 +57,9 @@ export default function Login() {
           onSubmit={handleSubmit}
           className="bg-white dark:bg-black/20 p-8 rounded-lg shadow-lg border border-black/[.08] dark:border-white/[.1]"
         >
-          <h1 className="text-2xl font-bold mb-6 text-center">Login</h1>
-
-          {justRegistered && (
-            <div className="mb-4 p-3 text-sm text-green-600 bg-green-100 dark:text-green-400 dark:bg-green-900/30 rounded-md">
-              Registration successful! Please log in.
-            </div>
-          )}
-
-          {justReset && (
-            <div className="mb-4 p-3 text-sm text-green-600 bg-green-100 dark:text-green-400 dark:bg-green-900/30 rounded-md">
-              Password reset successful! Please log in with your new password.
-            </div>
-          )}
+          <h1 className="text-2xl font-bold mb-6 text-center">
+            Reset Your Password
+          </h1>
 
           {error && (
             <div className="mb-4 p-3 text-sm text-red-500 bg-red-100 dark:bg-red-900/30 rounded-md">
@@ -75,25 +69,11 @@ export default function Login() {
 
           <div className="space-y-4">
             <div>
-              <label htmlFor="email" className="block text-sm font-medium mb-2">
-                Email
-              </label>
-              <input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md dark:bg-gray-900"
-                required
-              />
-            </div>
-
-            <div>
               <label
                 htmlFor="password"
                 className="block text-sm font-medium mb-2"
               >
-                Password
+                New Password
               </label>
               <input
                 id="password"
@@ -102,6 +82,25 @@ export default function Login() {
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md dark:bg-gray-900"
                 required
+                disabled={loading}
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor="confirmPassword"
+                className="block text-sm font-medium mb-2"
+              >
+                Confirm New Password
+              </label>
+              <input
+                id="confirmPassword"
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md dark:bg-gray-900"
+                required
+                disabled={loading}
               />
             </div>
 
@@ -110,29 +109,10 @@ export default function Login() {
               disabled={loading}
               className="w-full py-2 px-4 bg-foreground text-background rounded-md hover:bg-[#383838] dark:hover:bg-[#ccc] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? "Signing in..." : "Sign In"}
+              {loading ? "Resetting..." : "Reset Password"}
             </button>
           </div>
-
-          <div className="mt-6 text-center text-sm">
-            <Link
-              href="/auth/forgot-password"
-              className="text-blue-600 dark:text-blue-400 hover:underline"
-            >
-              Forgot your password?
-            </Link>
-          </div>
         </form>
-
-        <p className="mt-4 text-center text-sm">
-          Don&apos;t have an account?{" "}
-          <Link
-            href="/auth/register"
-            className="text-blue-600 dark:text-blue-400 hover:underline"
-          >
-            Register
-          </Link>
-        </p>
       </div>
     </div>
   );

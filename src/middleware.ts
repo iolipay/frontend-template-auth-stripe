@@ -12,7 +12,10 @@ export function middleware(request: NextRequest) {
   }
 
   // Prevent authenticated users from accessing auth pages
-  if (request.nextUrl.pathname.startsWith("/auth/")) {
+  if (
+    request.nextUrl.pathname.startsWith("/auth/") ||
+    request.nextUrl.pathname.startsWith("/reset-password/")
+  ) {
     if (token) {
       return NextResponse.redirect(new URL("/dashboard", request.url));
     }
@@ -22,5 +25,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/auth/:path*"],
+  matcher: ["/dashboard/:path*", "/auth/:path*", "/reset-password/:path*"],
 };

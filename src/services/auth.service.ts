@@ -88,4 +88,53 @@ export class AuthService {
       .find((row) => row.startsWith("token="));
     return cookie ? cookie.split("=")[1] : null;
   }
+
+  static async forgotPassword(email: string): Promise<void> {
+    const response = await fetch(
+      `${API_URL}/auth/forgot-password?email=${encodeURIComponent(email)}`,
+      {
+        method: "POST",
+      }
+    );
+
+    const responseData = await response.json();
+
+    if (!response.ok) {
+      const errorMessage =
+        typeof responseData.detail === "string"
+          ? responseData.detail
+          : Array.isArray(responseData.detail)
+          ? responseData.detail[0]?.msg
+          : "Failed to send reset email";
+
+      throw new Error(errorMessage);
+    }
+  }
+
+  static async resetPassword(
+    token: string,
+    newPassword: string
+  ): Promise<void> {
+    const response = await fetch(
+      `${API_URL}/auth/reset-password/${encodeURIComponent(
+        token
+      )}?new_password=${encodeURIComponent(newPassword)}`,
+      {
+        method: "POST",
+      }
+    );
+
+    const responseData = await response.json();
+
+    if (!response.ok) {
+      const errorMessage =
+        typeof responseData.detail === "string"
+          ? responseData.detail
+          : Array.isArray(responseData.detail)
+          ? responseData.detail[0]?.msg
+          : "Failed to reset password";
+
+      throw new Error(errorMessage);
+    }
+  }
 }
