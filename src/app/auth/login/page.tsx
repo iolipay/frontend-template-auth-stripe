@@ -23,12 +23,7 @@ export default function Login() {
 
     try {
       setLoading(true);
-      const { access_token } = await AuthService.login(email, password);
-
-      // Store the token
-      localStorage.setItem("token", access_token);
-
-      // Redirect to dashboard or home
+      await AuthService.login(email, password);
       router.push("/dashboard");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Login failed");

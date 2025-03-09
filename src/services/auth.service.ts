@@ -58,6 +58,34 @@ export class AuthService {
       throw new Error(errorMessage);
     }
 
+    // Set the token in an HTTP-only cookie
+    document.cookie = `token=${responseData.access_token}; path=/; max-age=86400; secure; samesite=strict`;
+
     return responseData;
+  }
+
+  static async logout(): Promise<void> {
+    document.cookie = "token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+  }
+
+  static async getCurrentUser(): Promise<UserResponse> {
+    const response = await fetch(`${API_URL}/users/me`, {
+      headers: {
+        Authorization: `Bearer ${AuthService.getToken()}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch user");
+    }
+
+    return response.json();
+  }
+
+  static getToken(): string | null {
+    const cookie = document.cookie
+      .split("; ")
+      .find((row) => row.startsWith("token="));
+    return cookie ? cookie.split("=")[1] : null;
   }
 }
