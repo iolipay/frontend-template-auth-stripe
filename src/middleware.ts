@@ -4,6 +4,13 @@ import type { NextRequest } from "next/server";
 export function middleware(request: NextRequest) {
   const token = request.cookies.get("token")?.value;
 
+  // Redirect authenticated users from home page to dashboard
+  if (request.nextUrl.pathname === "/") {
+    if (token) {
+      return NextResponse.redirect(new URL("/dashboard", request.url));
+    }
+  }
+
   // Protect dashboard routes
   if (request.nextUrl.pathname.startsWith("/dashboard")) {
     if (!token) {
@@ -25,5 +32,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/auth/:path*", "/reset-password/:path*"],
+  matcher: ["/", "/dashboard/:path*", "/auth/:path*", "/reset-password/:path*"],
 };
