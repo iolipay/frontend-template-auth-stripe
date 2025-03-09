@@ -23,7 +23,7 @@ export function middleware(request: NextRequest) {
     request.nextUrl.pathname.startsWith("/auth/") ||
     request.nextUrl.pathname.startsWith("/reset-password/")
   ) {
-    if (token) {
+    if (token && !request.nextUrl.pathname.startsWith("/auth/verify")) {
       return NextResponse.redirect(new URL("/dashboard", request.url));
     }
   }
@@ -32,5 +32,11 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/", "/dashboard/:path*", "/auth/:path*", "/reset-password/:path*"],
+  matcher: [
+    "/",
+    "/dashboard/:path*",
+    "/auth/:path*",
+    "/reset-password/:path*",
+    "/verify-email",
+  ],
 };
