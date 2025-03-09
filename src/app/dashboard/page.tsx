@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AuthService } from "@/services/auth.service";
 import type { UserResponse } from "@/types/auth";
+import Link from "next/link";
 
 export default function Dashboard() {
   const router = useRouter();
@@ -43,12 +44,20 @@ export default function Dashboard() {
       <div className="max-w-4xl mx-auto">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-2xl font-bold">Dashboard</h1>
-          <button
-            onClick={handleLogout}
-            className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors"
-          >
-            Logout
-          </button>
+          <div className="flex gap-4">
+            <Link
+              href="/dashboard/change-password"
+              className="px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-md hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors"
+            >
+              Change Password
+            </Link>
+            <button
+              onClick={handleLogout}
+              className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors"
+            >
+              Logout
+            </button>
+          </div>
         </div>
 
         <div className="bg-white dark:bg-black/20 p-6 rounded-lg shadow-lg border border-black/[.08] dark:border-white/[.1]">
