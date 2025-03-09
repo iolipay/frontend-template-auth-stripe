@@ -189,4 +189,26 @@ export class AuthService {
       throw new Error(errorMessage);
     }
   }
+
+  static async resendVerification(email: string): Promise<void> {
+    const response = await fetch(
+      `${API_URL}/auth/resend-verification?email=${encodeURIComponent(email)}`,
+      {
+        method: "POST",
+      }
+    );
+
+    const responseData = await response.json();
+
+    if (!response.ok) {
+      const errorMessage =
+        typeof responseData.detail === "string"
+          ? responseData.detail
+          : Array.isArray(responseData.detail)
+          ? responseData.detail[0]?.msg
+          : "Failed to resend verification email";
+
+      throw new Error(errorMessage);
+    }
+  }
 }
