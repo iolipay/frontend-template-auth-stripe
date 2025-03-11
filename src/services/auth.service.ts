@@ -69,24 +69,49 @@ export class AuthService {
   }
 
   static async getCurrentUser(): Promise<UserResponse> {
+    const token = AuthService.getToken();
+
+    if (!token) {
+      console.error("No token found in cookies");
+      throw new Error("No authentication token found");
+    }
+
     const response = await fetch(`${API_URL}/users/me`, {
       headers: {
-        Authorization: `Bearer ${AuthService.getToken()}`,
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
       },
+      credentials: "include", // Important: include cookies in the request
     });
 
     if (!response.ok) {
-      throw new Error("Failed to fetch user");
+      console.error(
+        "Failed to fetch user:",
+        response.status,
+        response.statusText
+      );
+      if (response.status === 401) {
+        // Clear invalid token
+        AuthService.logout();
+        throw new Error("Session expired. Please login again.");
+      }
+      throw new Error("Failed to fetch user data");
     }
 
     return response.json();
   }
 
   static getToken(): string | null {
-    const cookie = document.cookie
-      .split("; ")
-      .find((row) => row.startsWith("token="));
-    return cookie ? cookie.split("=")[1] : null;
+    try {
+      const cookie = document.cookie
+        .split("; ")
+        .find((row) => row.startsWith("token="));
+      const token = cookie ? cookie.split("=")[1] : null;
+      return token;
+    } catch (error) {
+      console.error("Error reading token from cookie:", error);
+      return null;
+    }
   }
 
   static async forgotPassword(email: string): Promise<void> {
