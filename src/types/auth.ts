@@ -17,3 +17,14 @@ export interface AuthError {
     type: string;
   }[];
 }
+
+export interface TokenResponse {
+  access_token: string;
+  token_type: string;
+  refresh_token: string;
+  expires_at: string;
+}
+
+export interface TokenRefresh {
+  refresh_token: string;
+}

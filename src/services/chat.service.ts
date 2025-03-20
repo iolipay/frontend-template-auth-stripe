@@ -1,7 +1,4 @@
 import { apiFetch, apiStreamFetch } from "@/utils/api";
-import { AuthService } from "./auth.service";
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 export interface Message {
   role: "user" | "assistant" | "system";
@@ -28,29 +25,6 @@ export interface ChatListItem {
 }
 
 export class ChatService {
-  private static handleUnauthorized() {
-    // Clear auth data
-    AuthService.logout();
-
-    // Redirect to login page
-    if (typeof window !== "undefined") {
-      window.location.href = "/auth/login";
-    }
-  }
-
-  private static async handleResponse(response: Response) {
-    if (response.status === 401) {
-      ChatService.handleUnauthorized();
-      throw new Error("Unauthorized - Please log in again");
-    }
-
-    if (!response.ok) {
-      throw new Error(`Request failed with status ${response.status}`);
-    }
-
-    return response;
-  }
-
   static async createChat(
     title?: string,
     messages: Message[] = []
@@ -74,54 +48,50 @@ export class ChatService {
   }
 
   static async getChats(skip = 0, limit = 20): Promise<ChatListItem[]> {
-    const response = await fetch(
-      `${API_URL}/chat/?skip=${skip}&limit=${limit}`,
-      {
-        headers: {
-          Authorization: `Bearer ${AuthService.getToken()}`,
-        },
-      }
-    );
+    const response = await apiFetch(`/chat/?skip=${skip}&limit=${limit}`);
 
-    await ChatService.handleResponse(response);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch chats: ${response.status}`);
+    }
+
     return response.json();
   }
 
   static async getChat(chatId: string): Promise<Chat> {
-    const response = await fetch(`${API_URL}/chat/${chatId}`, {
-      headers: {
-        Authorization: `Bearer ${AuthService.getToken()}`,
-      },
-    });
+    const response = await apiFetch(`/chat/${chatId}`);
 
-    await ChatService.handleResponse(response);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch chat: ${response.status}`);
+    }
+
     return response.json();
   }
 
   static async deleteChat(chatId: string): Promise<void> {
-    const response = await fetch(`${API_URL}/chat/${chatId}`, {
+    const response = await apiFetch(`/chat/${chatId}`, {
       method: "DELETE",
-      headers: {
-        Authorization: `Bearer ${AuthService.getToken()}`,
-      },
     });
 
-    await ChatService.handleResponse(response);
+    if (!response.ok) {
+      throw new Error(`Failed to delete chat: ${response.status}`);
+    }
   }
 
   static async updateChat(chatId: string, title: string): Promise<Chat> {
-    const response = await fetch(`${API_URL}/chat/${chatId}`, {
+    const response = await apiFetch(`/chat/${chatId}`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${AuthService.getToken()}`,
       },
       body: JSON.stringify({
         title,
       }),
     });
 
-    await ChatService.handleResponse(response);
+    if (!response.ok) {
+      throw new Error(`Failed to update chat: ${response.status}`);
+    }
+
     return response.json();
   }
 
