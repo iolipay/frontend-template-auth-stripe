@@ -11,6 +11,7 @@ A modern authentication template built with Next.js 14, featuring email verifica
 - 🔑 Password reset/change
 - 🍪 HTTP-only cookie auth
 - 🛡️ Protected routes
+- 🔄 Refresh token support for seamless session management
 
 ### User Features
 
@@ -71,10 +72,15 @@ src/
 3. **Login**:
 
    - Submit credentials
-   - Store JWT in HTTP-only cookie
+   - Store JWT and refresh token in HTTP-only cookies
    - Access dashboard
 
-4. **Password Reset**:
+4. **Token Refresh**:
+
+   - Automatically refresh access token using refresh token when it expires
+   - Maintain user session without requiring frequent logins
+
+5. **Password Reset**:
    - Request reset link
    - Set new password
    - Return to login
@@ -127,9 +133,12 @@ GET / auth / verify / { token };
 POST / auth / change - password;
 GET / users / me;
 POST / auth / resend - verification;
-POST / chat / GET / chat / GET / chat / { chat_id };
+POST / chat;
+GET / chat;
+GET / chat / { chat_id };
 DELETE / chat / { chat_id };
 POST / chat / stream;
+POST / auth / refresh; // New endpoint for refreshing tokens
 ```
 
 ## Security
