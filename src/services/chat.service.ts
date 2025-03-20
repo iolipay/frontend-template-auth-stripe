@@ -1,3 +1,4 @@
+import { apiFetch, apiStreamFetch } from "@/utils/api";
 import { AuthService } from "./auth.service";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
@@ -27,15 +28,37 @@ export interface ChatListItem {
 }
 
 export class ChatService {
+  private static handleUnauthorized() {
+    // Clear auth data
+    AuthService.logout();
+
+    // Redirect to login page
+    if (typeof window !== "undefined") {
+      window.location.href = "/auth/login";
+    }
+  }
+
+  private static async handleResponse(response: Response) {
+    if (response.status === 401) {
+      ChatService.handleUnauthorized();
+      throw new Error("Unauthorized - Please log in again");
+    }
+
+    if (!response.ok) {
+      throw new Error(`Request failed with status ${response.status}`);
+    }
+
+    return response;
+  }
+
   static async createChat(
     title?: string,
     messages: Message[] = []
   ): Promise<Chat> {
-    const response = await fetch(`${API_URL}/chat/`, {
+    const response = await apiFetch("/chat/", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${AuthService.getToken()}`,
       },
       body: JSON.stringify({
         title,
@@ -60,10 +83,7 @@ export class ChatService {
       }
     );
 
-    if (!response.ok) {
-      throw new Error("Failed to fetch chats");
-    }
-
+    await ChatService.handleResponse(response);
     return response.json();
   }
 
@@ -74,10 +94,7 @@ export class ChatService {
       },
     });
 
-    if (!response.ok) {
-      throw new Error("Failed to fetch chat");
-    }
-
+    await ChatService.handleResponse(response);
     return response.json();
   }
 
@@ -89,9 +106,7 @@ export class ChatService {
       },
     });
 
-    if (!response.ok) {
-      throw new Error("Failed to delete chat");
-    }
+    await ChatService.handleResponse(response);
   }
 
   static async updateChat(chatId: string, title: string): Promise<Chat> {
@@ -106,10 +121,7 @@ export class ChatService {
       }),
     });
 
-    if (!response.ok) {
-      throw new Error("Failed to update chat");
-    }
-
+    await ChatService.handleResponse(response);
     return response.json();
   }
 
@@ -117,22 +129,15 @@ export class ChatService {
     message: string,
     chatId?: string
   ): Promise<ReadableStream<Uint8Array> | null> {
-    const response = await fetch(`${API_URL}/chat/stream`, {
+    return apiStreamFetch("/chat/stream", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${AuthService.getToken()}`,
       },
       body: JSON.stringify({
         message,
         chat_id: chatId,
       }),
     });
-
-    if (!response.ok) {
-      throw new Error("Failed to stream chat");
-    }
-
-    return response.body;
   }
 }

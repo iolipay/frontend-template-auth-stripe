@@ -9,6 +9,9 @@ export function middleware(request: NextRequest) {
     `[MIDDLEWARE] Path: ${request.nextUrl.pathname}, Token exists: ${!!token}`
   );
 
+  // Check for API response redirects (for handling 401 responses from the API)
+  const response = NextResponse.next();
+
   // Protect dashboard routes - this should be the first check
   if (request.nextUrl.pathname.startsWith("/dashboard")) {
     if (!token) {
@@ -46,7 +49,19 @@ export function middleware(request: NextRequest) {
   }
 
   console.log(`[MIDDLEWARE] Allowing access to: ${request.nextUrl.pathname}`);
-  return NextResponse.next();
+  return response;
+}
+
+// Add a response function to handle API responses
+export function handleApiResponse(response: Response) {
+  if (response.status === 401) {
+    // Clear the token cookie
+    document.cookie = "token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+
+    // Redirect to login
+    window.location.href = "/auth/login";
+  }
+  return response;
 }
 
 export const config = {
