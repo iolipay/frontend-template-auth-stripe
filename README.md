@@ -1,6 +1,6 @@
 # Next.js Authentication Template
 
-A modern authentication template built with Next.js 14, featuring email verification, password reset, and user management.
+A modern authentication template built with Next.js 14, featuring email verification, password reset, user management, and a real-time chat interface.
 
 ## Features
 
@@ -19,12 +19,20 @@ A modern authentication template built with Next.js 14, featuring email verifica
 - 📧 Verification status
 - 🔄 Resend verification
 
+### Chat Features
+
+- 💬 Real-time chat with an AI assistant
+- 🗨️ Streaming responses
+- 📜 Chat history management
+- 🆕 Create and delete chats
+
 ## Tech Stack
 
 - Next.js 14 (App Router)
 - TypeScript
 - Tailwind CSS
 - JWT Authentication
+- FastAPI for backend
 
 ## Project Structure
 
@@ -38,7 +46,8 @@ src/
 │   │   └── reset-password
 │   ├── dashboard/           # Protected pages
 │   │   ├── profile
-│   │   └── change-password
+│   │   ├── change-password
+│   │   └── chat             # Chat page
 │   └── verify-email/        # Email verification
 ├── components/              # Shared components
 ├── services/               # API services
@@ -69,6 +78,22 @@ src/
    - Request reset link
    - Set new password
    - Return to login
+
+## Chat Flow
+
+1. **Start a Chat**:
+
+   - Click "New Chat" to create a conversation.
+   - Type a message and hit Enter to send.
+
+2. **Receive Responses**:
+
+   - Messages from the assistant stream in real-time.
+   - Chat history is maintained for future reference.
+
+3. **Manage Chats**:
+   - View a list of previous chats.
+   - Delete chats as needed.
 
 ## Quick Start
 
@@ -102,6 +127,9 @@ GET / auth / verify / { token };
 POST / auth / change - password;
 GET / users / me;
 POST / auth / resend - verification;
+POST / chat / GET / chat / GET / chat / { chat_id };
+DELETE / chat / { chat_id };
+POST / chat / stream;
 ```
 
 ## Security
