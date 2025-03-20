@@ -13,10 +13,11 @@ import {
   PaperAirplaneIcon,
   PlusIcon,
   TrashIcon,
+  SparklesIcon,
+  ArrowPathIcon,
+  ChatBubbleLeftRightIcon,
+  UserIcon,
 } from "@heroicons/react/24/outline";
-import { AuthService } from "@/services/auth.service";
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 export default function ChatPage() {
   const router = useRouter();
@@ -197,42 +198,43 @@ export default function ChatPage() {
   };
 
   return (
-    <div className="flex h-[calc(100vh-120px)]">
+    <div className="flex h-[calc(100vh-120px)] bg-black text-white">
       {/* Sidebar */}
-      <div className="w-64 bg-white dark:bg-black/20 border-r border-black/[.08] dark:border-white/[.1] flex flex-col">
-        <div className="p-4 border-b border-black/[.08] dark:border-white/[.1]">
+      <div className="w-72 bg-black border-r border-white flex flex-col">
+        <div className="p-4 border-b border-white">
           <button
             onClick={createNewChat}
-            className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-md border border-black/[.08] dark:border-white/[.145] hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] transition-colors"
+            className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-md bg-white text-black font-medium transition-all duration-200 shadow-lg hover:shadow-md"
           >
             <PlusIcon className="w-5 h-5" />
-            <span>New Chat</span>
+            <span>New Conversation</span>
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-2">
+        <div className="flex-1 overflow-y-auto p-3 scrollbar-thin scrollbar-thumb-white scrollbar-track-transparent">
           {chats.length === 0 ? (
-            <div className="text-center text-gray-500 dark:text-gray-400 p-4">
-              No chats yet
+            <div className="text-center text-white p-6 flex flex-col items-center">
+              <ChatBubbleLeftRightIcon className="w-10 h-10 mb-2 opacity-50" />
+              <p>No conversations yet</p>
             </div>
           ) : (
-            <ul className="space-y-1">
+            <ul className="space-y-2">
               {chats.map((chat) => (
                 <li key={chat.id}>
                   <Link
                     href={`/dashboard/chat?id=${chat.id}`}
-                    className={`flex items-center justify-between p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 ${
+                    className={`flex items-center justify-between p-3 rounded-lg hover:bg-white hover:text-black transition-all duration-200 ${
                       currentChat?.id === chat.id
-                        ? "bg-gray-100 dark:bg-gray-800"
-                        : ""
+                        ? "bg-white text-black border-l-4 border-black"
+                        : "text-white"
                     }`}
                   >
-                    <div className="truncate flex-1">
-                      {chat.title || "New Chat"}
+                    <div className="truncate flex-1 font-medium">
+                      {chat.title || "New Conversation"}
                     </div>
                     <button
                       onClick={(e) => deleteChat(chat.id, e)}
-                      className="text-gray-500 hover:text-red-500 dark:text-gray-400 dark:hover:text-red-400"
+                      className="text-white hover:text-red-400 transition-colors p-1 rounded-full hover:bg-black"
                     >
                       <TrashIcon className="w-4 h-4" />
                     </button>
@@ -245,62 +247,80 @@ export default function ChatPage() {
       </div>
 
       {/* Chat Area */}
-      <div className="flex-1 flex flex-col bg-gray-50 dark:bg-gray-900">
+      <div className="flex-1 flex flex-col bg-black relative">
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto p-4">
-          {loading ? (
-            <div className="flex justify-center items-center h-full">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 dark:border-white"></div>
-            </div>
-          ) : messages.length === 0 && !streamingMessage ? (
-            <div className="flex flex-col items-center justify-center h-full text-center">
-              <h2 className="text-xl font-semibold mb-2">
-                Start a new conversation
-              </h2>
-              <p className="text-gray-600 dark:text-gray-400 max-w-md">
-                Ask a question or start a conversation with the AI assistant.
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {messages.map((msg, index) => (
-                <div
-                  key={index}
-                  className={`flex ${
-                    msg.role === "user" ? "justify-end" : "justify-start"
-                  }`}
-                >
+        <div className="flex-1 overflow-hidden p-6 scrollbar-thin scrollbar-thumb-white scrollbar-track-transparent">
+          <div className="max-h-[calc(100vh-120px)] overflow-y-auto">
+            {loading ? (
+              <div className="flex justify-center items-center h-full">
+                <ArrowPathIcon className="w-8 h-8 text-white animate-spin" />
+              </div>
+            ) : messages.length === 0 && !streamingMessage ? (
+              <div className="flex flex-col items-center justify-center h-full text-center p-6">
+                <div className="w-16 h-16 mb-4 rounded-full bg-white flex items-center justify-center">
+                  <SparklesIcon className="w-8 h-8 text-black" />
+                </div>
+                <h2 className="text-2xl font-bold mb-3 text-white">
+                  Start a new conversation
+                </h2>
+                <p className="text-white max-w-md">
+                  Ask anything or start a conversation with the AI assistant.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-6 max-w-4xl mx-auto">
+                {messages.map((msg, index) => (
                   <div
-                    className={`max-w-3xl p-3 rounded-lg ${
-                      msg.role === "user"
-                        ? "bg-blue-500 text-white"
-                        : "bg-white dark:bg-gray-800 border border-black/[.08] dark:border-white/[.1]"
+                    key={index}
+                    className={`flex ${
+                      msg.role === "user" ? "justify-end" : "justify-start"
                     }`}
                   >
-                    <div className="whitespace-pre-wrap">{msg.content}</div>
-                  </div>
-                </div>
-              ))}
-
-              {streamingMessage && (
-                <div className="flex justify-start">
-                  <div className="max-w-3xl p-3 rounded-lg bg-white dark:bg-gray-800 border border-black/[.08] dark:border-white/[.1]">
-                    <div className="whitespace-pre-wrap">
-                      {streamingMessage}
+                    {msg.role === "assistant" && (
+                      <div className="mr-2">
+                        <UserIcon className="w-6 h-6 text-white" />
+                      </div>
+                    )}
+                    <div
+                      className={`max-w-3xl p-4 rounded-2xl shadow-lg ${
+                        msg.role === "user"
+                          ? "bg-white text-black"
+                          : "bg-black border border-white"
+                      }`}
+                    >
+                      <div className="whitespace-pre-wrap leading-relaxed">
+                        {msg.content}
+                      </div>
                     </div>
                   </div>
-                </div>
-              )}
+                ))}
 
-              <div ref={messagesEndRef} />
-            </div>
-          )}
+                {streamingMessage && (
+                  <div className="flex justify-start">
+                    <div className="max-w-3xl p-4 rounded-2xl shadow-lg bg-black border border-white">
+                      <div className="whitespace-pre-wrap leading-relaxed">
+                        {streamingMessage}
+                        <span className="inline-block w-2 h-4 ml-1 bg-white animate-pulse"></span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <div ref={messagesEndRef} />
+              </div>
+            )}
+          </div>
+          {/* Fade effect for long chats */}
+          <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-black to-transparent"></div>
         </div>
 
         {/* Input Area */}
-        <div className="p-4 border-t border-black/[.08] dark:border-white/[.1]">
-          <form onSubmit={handleSubmit} className="flex items-end gap-2">
-            <div className="flex-1 bg-white dark:bg-gray-800 rounded-lg border border-black/[.08] dark:border-white/[.1] overflow-hidden">
+        <div className="p-4 border-t border-white bg-black">
+          <form
+            onSubmit={handleSubmit}
+            className="flex items-end gap-3 max-w-4xl mx-auto"
+          >
+            <div className="flex-1 bg-white rounded-xl border border-black overflow-hidden shadow-inner focus-within:border-black transition-all duration-200">
               <textarea
                 ref={textareaRef}
                 value={message}
@@ -309,8 +329,8 @@ export default function ChatPage() {
                   adjustTextareaHeight();
                 }}
                 onKeyDown={handleKeyDown}
-                placeholder="Type a message..."
-                className="w-full p-3 focus:outline-none resize-none dark:bg-gray-800 max-h-32"
+                placeholder="Type your message..."
+                className="w-full p-4 focus:outline-none resize-none bg-white text-black max-h-40"
                 rows={1}
                 disabled={isStreaming}
               />
@@ -318,7 +338,7 @@ export default function ChatPage() {
             <button
               type="submit"
               disabled={isStreaming || !message.trim()}
-              className="p-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="p-4 bg-black text-white rounded-xl hover:bg-gray-800 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
             >
               <PaperAirplaneIcon className="w-5 h-5" />
             </button>
