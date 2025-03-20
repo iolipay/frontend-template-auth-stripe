@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { AuthService } from "@/services/auth.service";
 import type { UserResponse } from "@/types/auth";
+import { ChatBubbleLeftRightIcon } from "@heroicons/react/24/outline";
 
 interface NavbarProps {
   user: UserResponse | null;
@@ -23,12 +24,19 @@ export default function Navbar({ user }: NavbarProps) {
     <nav className="bg-white dark:bg-black/20 border-b border-black/[.08] dark:border-white/[.1] py-4">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center">
-          <div className="flex items-center">
+          <div className="flex items-center space-x-6">
             <Link
               href="/dashboard"
               className="text-xl font-bold hover:text-gray-700 dark:hover:text-gray-300"
             >
               Dashboard
+            </Link>
+            <Link
+              href="/dashboard/chat"
+              className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+            >
+              <ChatBubbleLeftRightIcon className="w-5 h-5" />
+              <span>Chat</span>
             </Link>
           </div>
 
