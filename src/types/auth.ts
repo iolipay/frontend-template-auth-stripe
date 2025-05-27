@@ -20,9 +20,9 @@ export interface AuthError {
 
 export interface TokenResponse {
   access_token: string;
-  token_type: string;
-  refresh_token: string;
-  expires_at: string;
+  token_type?: string;
+  refresh_token?: string;
+  expires_at?: string;
 }
 
 export interface TokenRefresh {

@@ -1,4 +1,4 @@
-import { UserCreate, UserResponse } from "@/types/auth";
+import { UserCreate, UserResponse, TokenResponse } from "@/types/auth";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
@@ -29,14 +29,7 @@ export class AuthService {
     return responseData;
   }
 
-  static async login(
-    email: string,
-    password: string
-  ): Promise<{
-    access_token: string;
-    refresh_token: string;
-    expires_at: string;
-  }> {
+  static async login(email: string, password: string): Promise<TokenResponse> {
     const formData = new URLSearchParams();
     formData.append("username", email);
     formData.append("password", password);
@@ -62,12 +55,31 @@ export class AuthService {
       throw new Error(errorMessage);
     }
 
+    // Debug: Log the response to see what we're getting from the backend
+    console.log("Login response data:", responseData);
+
     // Store tokens in cookies
-    document.cookie = `token=${responseData.access_token}; path=/; max-age=86400; secure; samesite=strict`;
-    document.cookie = `refresh_token=${responseData.refresh_token}; path=/; max-age=2592000; secure; samesite=strict`;
+    const isProduction = process.env.NODE_ENV === "production";
+    const cookieOptions = `path=/; ${
+      isProduction ? "secure; " : ""
+    }samesite=strict`;
+
+    console.log("Setting cookies with options:", cookieOptions);
+    console.log("Access token exists:", !!responseData.access_token);
+
+    if (responseData.access_token) {
+      document.cookie = `token=${responseData.access_token}; max-age=86400; ${cookieOptions}`;
+      console.log("Set access token cookie");
+    }
+
+    if (responseData.refresh_token) {
+      document.cookie = `refresh_token=${responseData.refresh_token}; max-age=2592000; ${cookieOptions}`;
+      console.log("Set refresh token cookie");
+    }
 
     if (responseData.expires_at) {
-      document.cookie = `token_expiry=${responseData.expires_at}; path=/; max-age=86400; secure; samesite=strict`;
+      document.cookie = `token_expiry=${responseData.expires_at}; max-age=86400; ${cookieOptions}`;
+      console.log("Set token expiry cookie");
     }
 
     return responseData;
@@ -75,24 +87,13 @@ export class AuthService {
 
   static async logout(): Promise<void> {
     try {
-      const refreshToken = AuthService.getRefreshToken();
-
-      if (refreshToken) {
-        // Call the logout endpoint to invalidate the refresh token
-        await fetch(`${API_URL}/auth/logout`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            refresh_token: refreshToken,
-          }),
-        });
-      }
+      // Note: Backend doesn't have a logout endpoint according to OpenAPI spec
+      // So we just clear the tokens locally
+      console.log("Logging out user - clearing local tokens");
     } catch (error) {
       console.error("Error during logout:", error);
     } finally {
-      // Clear all tokens regardless of API call success
+      // Clear all tokens
       document.cookie = "token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
       document.cookie =
         "refresh_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
@@ -102,45 +103,12 @@ export class AuthService {
   }
 
   static async refreshToken(): Promise<boolean> {
-    const refreshToken = AuthService.getRefreshToken();
-
-    if (!refreshToken) {
-      console.error("No refresh token found");
-      return false;
-    }
-
-    try {
-      const response = await fetch(`${API_URL}/auth/refresh`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          refresh_token: refreshToken,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to refresh token");
-      }
-
-      const data = await response.json();
-
-      // Update tokens in cookies
-      document.cookie = `token=${data.access_token}; path=/; max-age=86400; secure; samesite=strict`;
-      document.cookie = `refresh_token=${data.refresh_token}; path=/; max-age=2592000; secure; samesite=strict`;
-
-      if (data.expires_at) {
-        document.cookie = `token_expiry=${data.expires_at}; path=/; max-age=86400; secure; samesite=strict`;
-      }
-
-      return true;
-    } catch (error) {
-      console.error("Error refreshing token:", error);
-      // Clear tokens on refresh failure
-      AuthService.logout();
-      return false;
-    }
+    console.warn(
+      "Refresh token endpoint not available in backend - cannot refresh token"
+    );
+    // Since the backend doesn't have a refresh endpoint according to OpenAPI spec,
+    // we'll just return false to indicate refresh failed
+    return false;
   }
 
   static async getCurrentUser(): Promise<UserResponse> {
@@ -178,10 +146,12 @@ export class AuthService {
 
   static getToken(): string | null {
     try {
+      console.log("All cookies:", document.cookie);
       const cookie = document.cookie
         .split("; ")
         .find((row) => row.startsWith("token="));
       const token = cookie ? cookie.split("=")[1] : null;
+      console.log("Found token cookie:", !!token);
       return token;
     } catch (error) {
       console.error("Error reading token from cookie:", error);

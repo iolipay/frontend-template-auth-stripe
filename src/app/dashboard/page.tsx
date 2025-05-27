@@ -1,11 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { AuthService } from "@/services/auth.service";
-import type { UserResponse } from "@/types/auth";
-import Link from "next/link";
-
 export default function Dashboard() {
   return (
     <div className="bg-white dark:bg-black/20 p-6 rounded-lg shadow-lg border border-black/[.08] dark:border-white/[.1]">
