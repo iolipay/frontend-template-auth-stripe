@@ -9,13 +9,27 @@ import { SubscriptionService } from "@/services/subscription.service";
 
 export default function Dashboard() {
   const searchParams = useSearchParams();
-  const { subscription } = useSubscription();
+  const { subscription, refreshSubscription } = useSubscription();
   const currentPlan = usePlan();
   const [upgrading, setUpgrading] = useState(false);
+  const [managingSubscription, setManagingSubscription] = useState(false);
+  const [cancellingSubscription, setCancellingSubscription] = useState(false);
+  const [notification, setNotification] = useState<{
+    type: "success" | "error" | "info";
+    message: string;
+  } | null>(null);
 
   // Check for upgrade success/cancel messages
   const upgraded = searchParams.get("upgraded") === "true";
   const upgradeCancelled = searchParams.get("upgrade") === "cancelled";
+
+  const showNotification = (
+    type: "success" | "error" | "info",
+    message: string
+  ) => {
+    setNotification({ type, message });
+    setTimeout(() => setNotification(null), 5000); // Auto-hide after 5 seconds
+  };
 
   const handleUpgrade = async (planType: "pro" | "premium") => {
     try {
@@ -24,9 +38,57 @@ export default function Dashboard() {
       await SubscriptionService.handleUpgrade(planConfig.priceId);
     } catch (error) {
       console.error("Upgrade failed:", error);
-      alert("Failed to start upgrade process. Please try again.");
+      showNotification(
+        "error",
+        "Failed to start upgrade process. Please try again."
+      );
     } finally {
       setUpgrading(false);
+    }
+  };
+
+  const handleManageSubscription = async () => {
+    try {
+      setManagingSubscription(true);
+      await SubscriptionService.redirectToBillingPortal();
+    } catch (error) {
+      console.error("Failed to open billing portal:", error);
+      showNotification(
+        "error",
+        "Failed to open billing portal. Please try again."
+      );
+    } finally {
+      setManagingSubscription(false);
+    }
+  };
+
+  const handleCancelSubscription = async () => {
+    if (
+      !confirm(
+        "Are you sure you want to cancel your subscription? This action cannot be undone."
+      )
+    ) {
+      return;
+    }
+
+    try {
+      setCancellingSubscription(true);
+      const result = await SubscriptionService.cancelSubscription();
+      showNotification(
+        "success",
+        result.message || "Subscription cancelled successfully."
+      );
+
+      // Refresh subscription data to reflect the change
+      await refreshSubscription();
+    } catch (error) {
+      console.error("Failed to cancel subscription:", error);
+      showNotification(
+        "error",
+        "Failed to cancel subscription. Please try again."
+      );
+    } finally {
+      setCancellingSubscription(false);
     }
   };
 
@@ -43,6 +105,35 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
+      {/* Notification */}
+      {notification && (
+        <div
+          className={`p-4 rounded-lg border ${
+            notification.type === "success"
+              ? "bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 text-green-800 dark:text-green-200"
+              : notification.type === "error"
+              ? "bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 text-red-800 dark:text-red-200"
+              : "bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 text-blue-800 dark:text-blue-200"
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <span className="font-medium">{notification.message}</span>
+            <button
+              onClick={() => setNotification(null)}
+              className="ml-4 text-current hover:opacity-70"
+            >
+              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <path
+                  fillRule="evenodd"
+                  d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Success/Error Messages */}
       {upgraded && (
         <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
@@ -118,6 +209,79 @@ export default function Dashboard() {
           </div>
         )}
       </div>
+
+      {/* Subscription Management Section */}
+      {currentPlan !== "free" && (
+        <div className="bg-white dark:bg-black/20 p-6 rounded-lg shadow-lg border border-black/[.08] dark:border-white/[.1]">
+          <h2 className="text-xl font-semibold mb-4">
+            Subscription Management
+          </h2>
+          <p className="text-gray-600 dark:text-gray-400 mb-4">
+            Manage your subscription, update payment methods, or cancel your
+            plan.
+          </p>
+
+          <div className="flex flex-wrap gap-3">
+            <button
+              onClick={handleManageSubscription}
+              disabled={managingSubscription}
+              className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center"
+            >
+              <svg
+                className="w-4 h-4 mr-2"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+                />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                />
+              </svg>
+              {managingSubscription
+                ? "Opening Portal..."
+                : "Manage Subscription"}
+            </button>
+
+            <button
+              onClick={handleCancelSubscription}
+              disabled={cancellingSubscription}
+              className="bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center"
+            >
+              <svg
+                className="w-4 h-4 mr-2"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+              {cancellingSubscription ? "Cancelling..." : "Cancel Subscription"}
+            </button>
+          </div>
+
+          <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+            <p className="text-sm text-blue-800 dark:text-blue-200">
+              <strong>Tip:</strong> Use &quot;Manage Subscription&quot; to
+              update payment methods, view invoices, or change billing details
+              through Stripe&apos;s secure portal.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Quick Actions */}
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">

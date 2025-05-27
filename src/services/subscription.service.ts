@@ -96,9 +96,57 @@ export class SubscriptionService {
   }
 
   /**
+   * Get Stripe billing portal URL for subscription management
+   */
+  static async getManagePortalUrl(): Promise<{ url: string }> {
+    const token = AuthService.getToken();
+
+    if (!token) {
+      throw new Error("No authentication token found");
+    }
+
+    const response = await fetch(`${API_URL}/subscription/manage-portal`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      const errorMessage =
+        typeof data.detail === "string"
+          ? data.detail
+          : "Failed to get billing portal URL";
+      throw new Error(errorMessage);
+    }
+
+    return data;
+  }
+
+  /**
+   * Handle redirect to Stripe billing portal
+   */
+  static async redirectToBillingPortal(): Promise<void> {
+    try {
+      const { url } = await this.getManagePortalUrl();
+      if (url) {
+        window.location.href = url;
+      } else {
+        throw new Error("No billing portal URL received");
+      }
+    } catch (error) {
+      console.error("Failed to redirect to billing portal:", error);
+      throw error;
+    }
+  }
+
+  /**
    * Cancel subscription
    */
-  static async cancelSubscription(): Promise<void> {
+  static async cancelSubscription(): Promise<{ message: string }> {
     const token = AuthService.getToken();
 
     if (!token) {
@@ -113,14 +161,17 @@ export class SubscriptionService {
       },
     });
 
+    const data = await response.json();
+
     if (!response.ok) {
-      const data = await response.json();
       const errorMessage =
         typeof data.detail === "string"
           ? data.detail
           : "Failed to cancel subscription";
       throw new Error(errorMessage);
     }
+
+    return data;
   }
 
   /**
