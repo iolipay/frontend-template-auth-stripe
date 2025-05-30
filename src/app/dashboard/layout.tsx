@@ -24,6 +24,7 @@ export default function DashboardLayout({
       const userData = await AuthService.getCurrentUser();
       setUser(userData);
     } catch (error) {
+      console.error("Failed to load user data:", error);
       router.push("/auth/login");
     } finally {
       setLoading(false);

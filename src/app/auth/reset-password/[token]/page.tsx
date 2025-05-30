@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, use } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -9,13 +9,16 @@ import { AuthService } from "@/services/auth.service";
 export default function ResetPassword({
   params,
 }: {
-  params: { token: string };
+  params: Promise<{ token: string }>;
 }) {
   const router = useRouter();
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  // Use React's use() hook to unwrap the promise
+  const { token } = use(params);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,7 +31,7 @@ export default function ResetPassword({
 
     try {
       setLoading(true);
-      await AuthService.resetPassword(params.token, password);
+      await AuthService.resetPassword(token, password);
       router.push("/auth/login?reset=success");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to reset password");
