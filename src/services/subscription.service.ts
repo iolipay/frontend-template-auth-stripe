@@ -4,8 +4,7 @@ import {
   StripeCheckoutSession,
 } from "@/types/subscription";
 import { AuthService } from "./auth.service";
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+import { config } from "@/utils/config";
 
 export class SubscriptionService {
   /**
@@ -18,7 +17,7 @@ export class SubscriptionService {
       throw new Error("No authentication token found");
     }
 
-    const response = await fetch(`${API_URL}/subscription/me`, {
+    const response = await fetch(`${config.api.baseUrl}/subscription/me`, {
       headers: {
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
@@ -49,7 +48,7 @@ export class SubscriptionService {
     }
 
     const response = await fetch(
-      `${API_URL}/subscription/create-checkout-session`,
+      `${config.api.baseUrl}/subscription/create-checkout-session`,
       {
         method: "POST",
         headers: {
@@ -80,8 +79,8 @@ export class SubscriptionService {
     try {
       const session = await this.createCheckoutSession({
         price_id: priceId,
-        success_url: `${window.location.origin}/success`,
-        cancel_url: `${window.location.origin}/cancel`,
+        success_url: `${window.location.origin}${config.urls.successRedirect}`,
+        cancel_url: `${window.location.origin}${config.urls.cancelRedirect}`,
       });
 
       if (session.checkout_url) {
@@ -105,13 +104,16 @@ export class SubscriptionService {
       throw new Error("No authentication token found");
     }
 
-    const response = await fetch(`${API_URL}/subscription/manage-portal`, {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-    });
+    const response = await fetch(
+      `${config.api.baseUrl}/subscription/manage-portal`,
+      {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
 
     const data = await response.json();
 
@@ -153,7 +155,7 @@ export class SubscriptionService {
       throw new Error("No authentication token found");
     }
 
-    const response = await fetch(`${API_URL}/subscription/cancel`, {
+    const response = await fetch(`${config.api.baseUrl}/subscription/cancel`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${token}`,
@@ -184,13 +186,16 @@ export class SubscriptionService {
       throw new Error("No authentication token found");
     }
 
-    const response = await fetch(`${API_URL}/subscription/reactivate`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-    });
+    const response = await fetch(
+      `${config.api.baseUrl}/subscription/reactivate`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
 
     if (!response.ok) {
       const data = await response.json();

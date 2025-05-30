@@ -1,6 +1,5 @@
 import { AuthService } from "@/services/auth.service";
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+import { config } from "./config";
 
 // Track if a token refresh is in progress
 let isRefreshing = false;
@@ -30,7 +29,7 @@ export async function apiFetch(
   };
 
   try {
-    const response = await fetch(`${API_URL}${endpoint}`, {
+    const response = await fetch(`${config.api.baseUrl}${endpoint}`, {
       ...options,
       headers,
     });
@@ -47,7 +46,7 @@ export async function apiFetch(
         // If refresh failed, logout and redirect
         AuthService.logout();
         if (typeof window !== "undefined") {
-          window.location.href = "/auth/login";
+          window.location.href = config.urls.loginRedirect;
         }
         throw new Error("Unauthorized - Please log in again");
       }

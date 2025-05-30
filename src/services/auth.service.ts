@@ -1,10 +1,13 @@
 import { UserCreate, UserResponse, TokenResponse } from "@/types/auth";
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+import {
+  config,
+  getCookieOptions,
+  getClearCookieOptions,
+} from "@/utils/config";
 
 export class AuthService {
   static async register(data: UserCreate): Promise<UserResponse> {
-    const response = await fetch(`${API_URL}/auth/register`, {
+    const response = await fetch(`${config.api.baseUrl}/auth/register`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -34,7 +37,7 @@ export class AuthService {
     formData.append("username", email);
     formData.append("password", password);
 
-    const response = await fetch(`${API_URL}/auth/login`, {
+    const response = await fetch(`${config.api.baseUrl}/auth/login`, {
       method: "POST",
       headers: {
         "Content-Type": "application/x-www-form-urlencoded",
@@ -58,27 +61,29 @@ export class AuthService {
     // Debug: Log the response to see what we're getting from the backend
     console.log("Login response data:", responseData);
 
-    // Store tokens in cookies
-    const isProduction = process.env.NODE_ENV === "production";
-    const cookieOptions = `path=/; ${
-      isProduction ? "secure; " : ""
-    }samesite=strict`;
+    // Store tokens in cookies using centralized config
+    const tokenCookieOptions = getCookieOptions(
+      config.auth.cookies.tokenMaxAge
+    );
+    const refreshTokenCookieOptions = getCookieOptions(
+      config.auth.cookies.refreshTokenMaxAge
+    );
 
-    console.log("Setting cookies with options:", cookieOptions);
+    console.log("Setting cookies with options:", tokenCookieOptions);
     console.log("Access token exists:", !!responseData.access_token);
 
     if (responseData.access_token) {
-      document.cookie = `token=${responseData.access_token}; max-age=86400; ${cookieOptions}`;
+      document.cookie = `token=${responseData.access_token}; ${tokenCookieOptions}`;
       console.log("Set access token cookie");
     }
 
     if (responseData.refresh_token) {
-      document.cookie = `refresh_token=${responseData.refresh_token}; max-age=2592000; ${cookieOptions}`;
+      document.cookie = `refresh_token=${responseData.refresh_token}; ${refreshTokenCookieOptions}`;
       console.log("Set refresh token cookie");
     }
 
     if (responseData.expires_at) {
-      document.cookie = `token_expiry=${responseData.expires_at}; max-age=86400; ${cookieOptions}`;
+      document.cookie = `token_expiry=${responseData.expires_at}; ${tokenCookieOptions}`;
       console.log("Set token expiry cookie");
     }
 
@@ -93,12 +98,11 @@ export class AuthService {
     } catch (error) {
       console.error("Error during logout:", error);
     } finally {
-      // Clear all tokens
-      document.cookie = "token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
-      document.cookie =
-        "refresh_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
-      document.cookie =
-        "token_expiry=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+      // Clear all tokens using centralized config
+      const clearOptions = getClearCookieOptions();
+      document.cookie = `token=; ${clearOptions}`;
+      document.cookie = `refresh_token=; ${clearOptions}`;
+      document.cookie = `token_expiry=; ${clearOptions}`;
     }
   }
 
@@ -119,7 +123,7 @@ export class AuthService {
       throw new Error("No authentication token found");
     }
 
-    const response = await fetch(`${API_URL}/users/me`, {
+    const response = await fetch(`${config.api.baseUrl}/users/me`, {
       headers: {
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
@@ -189,14 +193,15 @@ export class AuthService {
     const expiry = this.getTokenExpiry();
     if (!expiry) return true;
 
-    // Add a buffer of 30 seconds to refresh before actual expiration
-    const buffer = 30 * 1000; // 30 seconds in milliseconds
-    return expiry.getTime() - buffer < Date.now();
+    // Use centralized buffer configuration
+    return expiry.getTime() - config.auth.tokenRefreshBuffer < Date.now();
   }
 
   static async forgotPassword(email: string): Promise<void> {
     const response = await fetch(
-      `${API_URL}/auth/forgot-password?email=${encodeURIComponent(email)}`,
+      `${config.api.baseUrl}/auth/forgot-password?email=${encodeURIComponent(
+        email
+      )}`,
       {
         method: "POST",
       }
@@ -221,7 +226,7 @@ export class AuthService {
     newPassword: string
   ): Promise<void> {
     const response = await fetch(
-      `${API_URL}/auth/reset-password/${encodeURIComponent(
+      `${config.api.baseUrl}/auth/reset-password/${encodeURIComponent(
         token
       )}?new_password=${encodeURIComponent(newPassword)}`,
       {
@@ -247,7 +252,7 @@ export class AuthService {
     currentPassword: string,
     newPassword: string
   ): Promise<void> {
-    const response = await fetch(`${API_URL}/auth/change-password`, {
+    const response = await fetch(`${config.api.baseUrl}/auth/change-password`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -275,7 +280,7 @@ export class AuthService {
 
   static async verifyEmail(token: string): Promise<void> {
     const response = await fetch(
-      `${API_URL}/auth/verify/${encodeURIComponent(token)}`,
+      `${config.api.baseUrl}/auth/verify/${encodeURIComponent(token)}`,
       {
         method: "GET",
       }
@@ -297,7 +302,9 @@ export class AuthService {
 
   static async resendVerification(email: string): Promise<void> {
     const response = await fetch(
-      `${API_URL}/auth/resend-verification?email=${encodeURIComponent(email)}`,
+      `${
+        config.api.baseUrl
+      }/auth/resend-verification?email=${encodeURIComponent(email)}`,
       {
         method: "POST",
       }
