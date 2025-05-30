@@ -7,7 +7,6 @@ import Link from "next/link";
 import { AuthService } from "@/services/auth.service";
 
 export default function VerifyEmail() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
   const [status, setStatus] = useState<"loading" | "success" | "error">(
