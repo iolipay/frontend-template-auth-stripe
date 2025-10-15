@@ -7,11 +7,12 @@ import { Button } from "@/components/ui/Button";
 import { Alert } from "@/components/ui/Alert";
 import { CurrentMonthCard } from "@/components/transactions/CurrentMonthCard";
 import { IncomeLineChart } from "@/components/transactions/charts/IncomeLineChart";
-import { CategoryPieChart } from "@/components/transactions/charts/CategoryPieChart";
+import { MonthlyBarChart } from "@/components/transactions/charts/MonthlyBarChart";
 import {
   ChartData,
   CurrentMonthStats,
   TransactionStatistics,
+  MonthlyStatsResponse,
 } from "@/types/transaction";
 import { TransactionService } from "@/services/transaction.service";
 
@@ -19,10 +20,12 @@ export default function Dashboard() {
   const [currentMonth, setCurrentMonth] = useState<CurrentMonthStats | null>(null);
   const [chartData, setChartData] = useState<ChartData | null>(null);
   const [stats, setStats] = useState<TransactionStatistics | null>(null);
+  const [monthlyData, setMonthlyData] = useState<MonthlyStatsResponse | null>(null);
 
   const [currentMonthLoading, setCurrentMonthLoading] = useState(true);
   const [chartLoading, setChartLoading] = useState(true);
   const [statsLoading, setStatsLoading] = useState(true);
+  const [monthlyLoading, setMonthlyLoading] = useState(true);
 
   const [error, setError] = useState("");
 
@@ -63,6 +66,31 @@ export default function Dashboard() {
       console.error("Failed to load stats:", err);
     } finally {
       setStatsLoading(false);
+    }
+
+    // Load last 6 months data
+    try {
+      setMonthlyLoading(true);
+      const currentYear = new Date().getFullYear();
+      const allMonthlyData = await TransactionService.getMonthlyStatistics(currentYear);
+
+      // Get only last 6 months
+      const currentMonth = new Date().getMonth() + 1; // 1-12
+      const last6Months = allMonthlyData.months
+        .filter(m => {
+          const monthNum = parseInt(m.month.split("-")[1]);
+          return monthNum <= currentMonth && monthNum > currentMonth - 6;
+        })
+        .slice(-6); // Ensure we only get last 6
+
+      setMonthlyData({
+        ...allMonthlyData,
+        months: last6Months,
+      });
+    } catch (err) {
+      console.error("Failed to load monthly data:", err);
+    } finally {
+      setMonthlyLoading(false);
     }
   };
 
@@ -213,14 +241,24 @@ export default function Dashboard() {
           {chartData && (
             <IncomeLineChart data={chartData} loading={chartLoading} />
           )}
+          {chartData && !chartLoading && (
+            <div className="mt-4 pt-4 border-t-2 border-gray-200">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-gray-600">Period Total:</span>
+                <span className="font-medium text-green-600">
+                  {TransactionService.formatGEL(chartData.total_income_gel)}
+                </span>
+              </div>
+            </div>
+          )}
         </Card>
 
-        {/* Category Breakdown */}
-        {currentMonth && Object.keys(currentMonth.by_category).length > 0 && (
+        {/* Last 6 Months Comparison */}
+        {monthlyData && (
           <Card>
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-medium uppercase tracking-wide">
-                Current Month by Category
+                Last 6 Months
               </h2>
               <Link
                 href="/dashboard/analytics"
@@ -229,10 +267,30 @@ export default function Dashboard() {
                 View More →
               </Link>
             </div>
-            <CategoryPieChart
-              data={currentMonth.by_category}
-              loading={currentMonthLoading}
-            />
+            <MonthlyBarChart data={monthlyData} loading={monthlyLoading} />
+            {monthlyData && !monthlyLoading && monthlyData.months.length > 0 && (
+              <div className="mt-4 pt-4 border-t-2 border-gray-200">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="text-center">
+                    <p className="text-xs text-gray-500 mb-1">Highest Month</p>
+                    <p className="text-sm font-medium text-[#003049]">
+                      {TransactionService.formatGEL(
+                        Math.max(...monthlyData.months.map(m => m.total_income_gel))
+                      )}
+                    </p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-xs text-gray-500 mb-1">6-Month Avg</p>
+                    <p className="text-sm font-medium text-[#4e35dc]">
+                      {TransactionService.formatGEL(
+                        monthlyData.months.reduce((sum, m) => sum + m.total_income_gel, 0) /
+                        monthlyData.months.length
+                      )}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
           </Card>
         )}
       </div>
