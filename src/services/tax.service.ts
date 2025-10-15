@@ -387,9 +387,41 @@ export class TaxService {
   }
 
   /**
-   * Get filing service cost
+   * Calculate service fee (2% of income)
    */
-  static getFilingServiceCost(): number {
-    return 50.0; // GEL
+  static calculateServiceFee(income: number): number {
+    return income * 0.02;
+  }
+
+  /**
+   * Calculate total filing cost (1% tax + 2% service = 3% total)
+   */
+  static calculateTotalFilingCost(income: number): number {
+    return income * 0.03;
+  }
+
+  /**
+   * Calculate tax amount (1% of income)
+   */
+  static calculateTaxAmount(income: number): number {
+    return income * 0.01;
+  }
+
+  /**
+   * Get fee structure for admin filing service
+   */
+  static async getFeeStructure() {
+    const response = await apiFetch("/tax-stats/filing-service/fee-structure");
+
+    if (!response.ok) {
+      const responseData = await response.json();
+      const errorMessage =
+        typeof responseData.detail === "string"
+          ? responseData.detail
+          : "Failed to fetch fee structure";
+      throw new Error(errorMessage);
+    }
+
+    return response.json();
   }
 }

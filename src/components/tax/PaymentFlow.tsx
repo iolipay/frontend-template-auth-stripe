@@ -12,6 +12,9 @@ interface PaymentFlowProps {
   month: number;
   amount: number;
   paymentId: string;
+  income?: number; // Optional: for showing breakdown
+  taxAmount?: number; // Optional: 1% tax
+  serviceFee?: number; // Optional: 2% service fee
   onPaymentSuccess?: () => void;
 }
 
@@ -20,11 +23,19 @@ export function PaymentFlow({
   month,
   amount,
   paymentId,
+  income,
+  taxAmount,
+  serviceFee,
   onPaymentSuccess,
 }: PaymentFlowProps) {
   const [paying, setPaying] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+
+  // If income is provided but breakdown isn't, calculate it
+  const calculatedTaxAmount = taxAmount ?? (income ? TaxService.calculateTaxAmount(income) : null);
+  const calculatedServiceFee = serviceFee ?? (income ? TaxService.calculateServiceFee(income) : null);
+  const showBreakdown = calculatedTaxAmount !== null && calculatedServiceFee !== null;
 
   const handlePayment = async () => {
     try {
@@ -97,14 +108,43 @@ export function PaymentFlow({
             {paymentId}
           </span>
         </div>
-        <div className="flex justify-between items-center py-3">
-          <span className="text-lg font-medium uppercase tracking-wide">
-            Total Amount
-          </span>
-          <span className="text-2xl font-medium text-[#4e35dc]">
-            {formatTaxAmount(amount)}
-          </span>
-        </div>
+
+        {/* Fee Breakdown */}
+        {showBreakdown ? (
+          <div className="space-y-3 py-3">
+            <div className="bg-blue-50 border-2 border-blue-200 rounded-[9px] p-3 space-y-2">
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-700">Tax Payment (1%)</span>
+                <span className="font-medium text-green-600">
+                  {formatTaxAmount(calculatedTaxAmount!)}
+                </span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-700">Service Fee (2%)</span>
+                <span className="font-medium text-blue-600">
+                  {formatTaxAmount(calculatedServiceFee!)}
+                </span>
+              </div>
+              <div className="pt-2 border-t-2 border-blue-300 flex justify-between">
+                <span className="text-base font-medium uppercase tracking-wide text-gray-900">
+                  Total (3%)
+                </span>
+                <span className="text-xl font-medium text-[#4e35dc]">
+                  {formatTaxAmount(amount)}
+                </span>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="flex justify-between items-center py-3">
+            <span className="text-lg font-medium uppercase tracking-wide">
+              Total Amount
+            </span>
+            <span className="text-2xl font-medium text-[#4e35dc]">
+              {formatTaxAmount(amount)}
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Mock Payment Notice */}

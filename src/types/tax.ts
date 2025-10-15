@@ -172,7 +172,11 @@ export interface FilingServiceRequest {
 export interface FilingServiceRequestResponse {
   declaration_id: string;
   payment_id: string;
-  amount: number;
+  amount: number; // Kept for backward compatibility
+  income_gel: number;
+  tax_amount: number; // 1% tax
+  service_fee: number; // 2% service fee
+  total_amount: number; // 3% total
   status: string;
   message: string;
 }
@@ -185,7 +189,11 @@ export interface PaymentRequest {
 export interface PaymentResponse {
   declaration_id: string;
   payment_id: string;
-  amount: number;
+  amount: number; // Kept for backward compatibility
+  income_gel: number;
+  tax_amount: number; // 1% tax
+  service_fee: number; // 2% service fee
+  total_amount: number; // 3% total
   status: string;
   paid_at: string;
   message: string;
@@ -197,12 +205,22 @@ export interface FilingStatusResponse {
   status: DeclarationStatus;
   payment_status: PaymentStatus;
   payment_amount: number;
+  income_gel?: number;
+  tax_amount?: number;
+  service_fee?: number;
   payment_date: string | null;
   filing_method: FilingMethod;
   filed_by_admin_at: string | null;
   requires_correction: boolean;
   correction_notes: string;
   admin_notes: string;
+}
+
+export interface FeeStructure {
+  tax_rate: number; // 0.01 (1%)
+  service_fee_rate: number; // 0.02 (2%)
+  total_rate: number; // 0.03 (3%)
+  description: string;
 }
 
 export interface AdminDeclarationItem {
@@ -252,6 +270,8 @@ export interface AdminActionResponse {
 // Constants for Georgian tax system
 export const GEORGIAN_TAX_CONSTANTS = {
   taxRate: 0.01, // 1%
+  serviceFeeRate: 0.02, // 2% filing service fee
+  totalFilingRate: 0.03, // 3% total (1% tax + 2% service)
   annualThreshold: 500000, // GEL
   declarationDay: 15, // 15th of next month
   taxSystemName: "მცირე ბიზნესის სტატუსი",

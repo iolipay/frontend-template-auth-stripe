@@ -19,6 +19,7 @@ import { TransactionService } from "@/services/transaction.service";
 import { TaxOverview } from "@/types/tax";
 import { TaxService } from "@/services/tax.service";
 import { ThresholdProgress } from "@/components/tax/ThresholdProgress";
+import { UnpaidDeclarationsWidget } from "@/components/tax/UnpaidDeclarationsWidget";
 import { Badge } from "@/components/ui/Badge";
 import { getTaxStatusLabel } from "@/types/tax";
 import { AuthService } from "@/services/auth.service";
@@ -265,6 +266,9 @@ export default function Dashboard() {
           </div>
         </Card>
       )}
+
+      {/* Unpaid Declarations Widget */}
+      <UnpaidDeclarationsWidget />
 
       {/* Current Month Overview */}
       {currentMonth && (

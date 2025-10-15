@@ -26,7 +26,10 @@ export function FilingServiceCard({
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-  const serviceCost = TaxService.getFilingServiceCost();
+  // Calculate dynamic fees based on income
+  const taxAmount = TaxService.calculateTaxAmount(income);
+  const serviceFee = TaxService.calculateServiceFee(income);
+  const totalCost = TaxService.calculateTotalFilingCost(income);
 
   const handleRequestService = async () => {
     try {
@@ -60,10 +63,10 @@ export function FilingServiceCard({
         </div>
         <div className="text-right">
           <p className="text-2xl font-medium text-[#4e35dc]">
-            {formatTaxAmount(serviceCost)}
+            {formatTaxAmount(totalCost)}
           </p>
           <p className="text-xs text-gray-500 uppercase tracking-wide">
-            One-time fee
+            3% of income
           </p>
         </div>
       </div>
@@ -80,6 +83,31 @@ export function FilingServiceCard({
       )}
 
       <div className="space-y-4 mt-6">
+        {/* Fee Breakdown */}
+        <div className="bg-purple-50 border-2 border-purple-200 rounded-[9px] p-4">
+          <h4 className="text-sm font-medium uppercase tracking-wide text-purple-900 mb-3">
+            Fee Breakdown
+          </h4>
+          <div className="space-y-2 text-sm">
+            <div className="flex justify-between">
+              <span className="text-gray-700">Income</span>
+              <span className="font-medium">{formatTaxAmount(income)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-700">Tax (1%) → Government</span>
+              <span className="font-medium text-green-600">{formatTaxAmount(taxAmount)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-700">Service Fee (2%) → Us</span>
+              <span className="font-medium text-blue-600">{formatTaxAmount(serviceFee)}</span>
+            </div>
+            <div className="pt-2 border-t-2 border-purple-300 flex justify-between">
+              <span className="font-medium text-purple-900">Total (3%)</span>
+              <span className="font-medium text-[#4e35dc] text-lg">{formatTaxAmount(totalCost)}</span>
+            </div>
+          </div>
+        </div>
+
         {/* What's Included */}
         <div className="bg-blue-50 border-2 border-blue-200 rounded-[9px] p-4">
           <h4 className="text-sm font-medium uppercase tracking-wide text-blue-900 mb-3">
@@ -191,13 +219,13 @@ export function FilingServiceCard({
           onClick={handleRequestService}
           disabled={requesting}
         >
-          {requesting ? "Requesting..." : `Request Filing Service - ${formatTaxAmount(serviceCost)}`}
+          {requesting ? "Requesting..." : `Request Filing Service - ${formatTaxAmount(totalCost)}`}
         </Button>
 
         {/* Disclaimer */}
         <p className="text-xs text-gray-500 text-center">
-          After requesting service, you'll need to complete payment. Our admin
-          team will then file your declaration on RS.ge.
+          After requesting service, you'll need to complete payment (3% of your income).
+          Our admin team will then file your declaration on RS.ge.
         </p>
       </div>
     </Card>

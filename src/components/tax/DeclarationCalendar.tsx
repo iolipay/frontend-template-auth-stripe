@@ -29,6 +29,14 @@ export function DeclarationCalendar({
     return monthA - monthB;
   });
 
+  const handleCardClick = (monthData: MonthlyTaxData, monthNum: number, yearNum: number) => {
+    if (onMonthClick) {
+      onMonthClick(monthData);
+    } else {
+      window.location.href = `/dashboard/tax-declarations/${yearNum}/${monthNum}`;
+    }
+  };
+
   return (
     <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
       {sortedMonths.map((monthData) => {
@@ -44,21 +52,12 @@ export function DeclarationCalendar({
         const isSoon = isDeadlineSoon(monthData.days_until_deadline);
         const isUrgent = isDeadlineUrgent(monthData.days_until_deadline);
 
-        const CardWrapper = onMonthClick ? "button" : Link;
-        const cardProps = onMonthClick
-          ? {
-              onClick: () => onMonthClick(monthData),
-              className:
-                "w-full text-left border-2 border-gray-200 rounded-[9px] p-4 hover:border-[#003049] hover:shadow-lg transition-all duration-200 bg-white",
-            }
-          : {
-              href: `/dashboard/tax-declarations/${yearNum}/${monthNum}`,
-              className:
-                "block border-2 border-gray-200 rounded-[9px] p-4 hover:border-[#003049] hover:shadow-lg transition-all duration-200 bg-white",
-            };
-
         return (
-          <CardWrapper key={monthData.month} {...(cardProps as any)}>
+          <div
+            key={monthData.month}
+            onClick={() => handleCardClick(monthData, monthNum, yearNum)}
+            className="border-2 border-gray-200 rounded-[9px] p-4 hover:border-[#003049] hover:shadow-lg transition-all duration-200 bg-white cursor-pointer"
+          >
             {/* Month Header */}
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-sm font-medium uppercase tracking-wide text-gray-900">
@@ -92,6 +91,18 @@ export function DeclarationCalendar({
                 {formatTaxAmount(monthData.tax_due_gel)}
               </p>
             </div>
+
+            {/* Payment Amount (for unpaid declarations) */}
+            {(monthData.declaration_status === "pending" ||
+              monthData.declaration_status === "awaiting_payment" ||
+              monthData.declaration_status === "overdue") && (
+              <div className="mb-3 p-2 bg-purple-50 border-2 border-purple-200 rounded-[9px]">
+                <p className="text-xs text-gray-500">Total Payment (3%)</p>
+                <p className="text-base font-medium text-[#4e35dc]">
+                  {formatTaxAmount(TaxService.calculateTotalFilingCost(monthData.income_gel))}
+                </p>
+              </div>
+            )}
 
             {/* Transaction Count */}
             <div className="mb-3 pb-3 border-b-2 border-gray-100">
@@ -174,7 +185,35 @@ export function DeclarationCalendar({
                 </p>
               </div>
             )}
-          </CardWrapper>
+
+            {/* Pay Now Button for Unpaid Declarations */}
+            {(monthData.declaration_status === "pending" ||
+              monthData.declaration_status === "awaiting_payment" ||
+              monthData.declaration_status === "overdue") && !onMonthClick && (
+              <div className="mt-3 pt-3 border-t-2 border-gray-100">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    window.location.href = `/dashboard/tax-declarations/${yearNum}/${monthNum}/pay`;
+                  }}
+                  className="w-full bg-[#4e35dc] hover:bg-[#003049] text-white text-sm font-medium uppercase tracking-wide py-2 px-4 rounded-none border-2 border-[#4e35dc] hover:border-[#003049] shadow-[3px_3px_0px_0px_#333333] hover:shadow-[3px_3px_0px_0px_#000000] active:translate-x-0.5 active:translate-y-0.5 transition-all duration-200"
+                >
+                  Pay Now
+                </button>
+              </div>
+            )}
+
+            {/* Filed Status */}
+            {monthData.declaration_status === "filed_by_admin" && (
+              <div className="mt-3 pt-3 border-t-2 border-gray-100">
+                <div className="p-2 bg-green-50 rounded-[9px] border-2 border-green-200 text-center">
+                  <p className="text-xs font-medium text-green-800">
+                    ✓ Filed by Admin
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
         );
       })}
     </div>

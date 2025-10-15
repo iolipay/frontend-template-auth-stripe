@@ -7,8 +7,6 @@ import { Button } from "@/components/ui/Button";
 import { Alert } from "@/components/ui/Alert";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
-import { FilingServiceCard } from "@/components/tax/FilingServiceCard";
-import { PaymentFlow } from "@/components/tax/PaymentFlow";
 import {
   DeclarationDetail,
   formatTaxAmount,
@@ -30,7 +28,6 @@ export default function DeclarationDetailPage() {
     null
   );
   const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
@@ -51,30 +48,6 @@ export default function DeclarationDetailPage() {
       );
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleMarkSubmitted = async () => {
-    if (!declaration) return;
-
-    try {
-      setSubmitting(true);
-      setError("");
-      const response = await TaxService.markDeclarationSubmitted(year, month);
-      setSuccess(response.message);
-      setDeclaration(response.declaration);
-      setTimeout(() => {
-        router.push("/dashboard/tax-declarations");
-      }, 2000);
-    } catch (err) {
-      console.error("Failed to mark as submitted:", err);
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Failed to mark declaration as submitted"
-      );
-    } finally {
-      setSubmitting(false);
     }
   };
 
@@ -242,12 +215,14 @@ export default function DeclarationDetailPage() {
         </div>
 
         {/* Status-specific Info */}
-        {declaration.declaration_status === "pending" &&
-          declaration.days_until_deadline !== null && (
+        {(declaration.declaration_status === "pending" ||
+          declaration.declaration_status === "overdue") && (
             <div
               className={`p-4 rounded-[9px] border-2 ${
-                isUrgent
+                declaration.is_overdue
                   ? "bg-red-50 border-red-200"
+                  : isUrgent
+                  ? "bg-orange-50 border-orange-200"
                   : isSoon
                   ? "bg-amber-50 border-amber-200"
                   : "bg-blue-50 border-blue-200"
@@ -255,46 +230,39 @@ export default function DeclarationDetailPage() {
             >
               <h3
                 className={`text-sm font-medium uppercase tracking-wide mb-2 ${
-                  isUrgent
+                  declaration.is_overdue
                     ? "text-red-800"
+                    : isUrgent
+                    ? "text-orange-800"
                     : isSoon
                     ? "text-amber-800"
                     : "text-blue-800"
                 }`}
               >
-                {isUrgent
-                  ? "🚨 Urgent: Deadline Approaching"
+                {declaration.is_overdue
+                  ? "⚠️ Payment Overdue"
+                  : isUrgent
+                  ? "🚨 Urgent: Payment Due Soon"
                   : isSoon
-                  ? "⚠️ Reminder: Declaration Due Soon"
-                  : "ℹ️ Declaration Pending"}
+                  ? "⚠️ Reminder: Payment Due Soon"
+                  : "💰 Payment Required"}
               </h3>
               <p className="text-sm text-gray-700 mb-3">
-                This declaration must be filed by{" "}
-                {new Date(declaration.filing_deadline).toLocaleDateString(
-                  "en-US",
-                  { month: "long", day: "numeric" }
-                )}{" "}
-                at{" "}
-                <a
-                  href="https://rs.ge"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-[#4e35dc] hover:underline font-medium"
-                >
-                  rs.ge
-                </a>
-                .
+                {declaration.is_overdue
+                  ? `Payment deadline has passed. Please pay now to have our admin team file your declaration.`
+                  : `Pay by ${new Date(declaration.filing_deadline).toLocaleDateString(
+                      "en-US",
+                      { month: "long", day: "numeric" }
+                    )} and our admin team will file your declaration on RS.ge for you.`}
               </p>
-              {declaration.declaration_status === "pending" && (
+              <Link href={`/dashboard/tax-declarations/${year}/${month}/pay`}>
                 <Button
                   variant="primary"
-                  onClick={handleMarkSubmitted}
-                  disabled={submitting}
                   className="w-full md:w-auto"
                 >
-                  {submitting ? "Saving..." : "Mark as Submitted"}
+                  Pay {formatTaxAmount(TaxService.calculateTotalFilingCost(declaration.income_gel))} Now
                 </Button>
-              )}
+              </Link>
             </div>
           )}
 
@@ -320,35 +288,6 @@ export default function DeclarationDetailPage() {
               </p>
             </div>
           )}
-
-        {declaration.is_overdue && declaration.declaration_status !== "rejected" && (
-          <div className="p-4 bg-red-50 border-2 border-red-200 rounded-[9px]">
-            <h3 className="text-sm font-medium uppercase tracking-wide text-red-800 mb-2">
-              ⚠️ Declaration Overdue
-            </h3>
-            <p className="text-sm text-gray-700 mb-3">
-              The filing deadline for this declaration has passed. Please submit
-              your declaration at{" "}
-              <a
-                href="https://rs.ge"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-[#4e35dc] hover:underline font-medium"
-              >
-                rs.ge
-              </a>{" "}
-              as soon as possible.
-            </p>
-            <Button
-              variant="primary"
-              onClick={handleMarkSubmitted}
-              disabled={submitting}
-              className="w-full md:w-auto"
-            >
-              {submitting ? "Saving..." : "Mark as Submitted"}
-            </Button>
-          </div>
-        )}
 
         {/* Payment Received - Waiting for Admin */}
         {declaration.declaration_status === "payment_received" && (
@@ -439,106 +378,40 @@ export default function DeclarationDetailPage() {
         )}
       </Card>
 
-      {/* Filing Service Cards (Only for pending/awaiting_payment) */}
-      {declaration.declaration_status === "pending" && (
-        <FilingServiceCard
-          year={year}
-          month={month}
-          income={declaration.income_gel}
-          taxDue={declaration.tax_due_gel}
-          onRequestSuccess={loadDeclaration}
-        />
-      )}
-
+      {/* Awaiting Payment - Show Payment Flow */}
       {declaration.declaration_status === "awaiting_payment" &&
         declaration.mock_payment_id && (
-          <PaymentFlow
-            year={year}
-            month={month}
-            amount={declaration.payment_amount}
-            paymentId={declaration.mock_payment_id}
-            onPaymentSuccess={loadDeclaration}
-          />
-        )}
-
-      {/* How to File (only for self-service) */}
-      {!TaxService.isAdminManaged(declaration.declaration_status) && (
-        <Card>
-          <h2 className="text-lg font-medium uppercase tracking-wide mb-4">
-            How to File This Declaration
-          </h2>
-        <ol className="space-y-3 text-sm text-gray-700">
-          <li className="flex items-start gap-3">
-            <span className="flex-shrink-0 w-6 h-6 bg-[#003049] text-white rounded-full flex items-center justify-center text-xs font-medium">
-              1
-            </span>
-            <div>
-              <p className="font-medium">Visit rs.ge</p>
-              <p className="text-gray-600">
-                Log in to the Revenue Service portal at{" "}
-                <a
-                  href="https://rs.ge"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-[#4e35dc] hover:underline"
+          <Card>
+            <div className="text-center py-8">
+              <div className="w-16 h-16 bg-blue-100 rounded-[9px] mx-auto mb-4 flex items-center justify-center">
+                <svg
+                  className="w-8 h-8 text-blue-600"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
                 >
-                  rs.ge
-                </a>
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
+                  />
+                </svg>
+              </div>
+              <h3 className="text-lg font-medium uppercase tracking-wide text-gray-900 mb-2">
+                Complete Payment
+              </h3>
+              <p className="text-sm text-gray-600 mb-6">
+                Finalize your payment to have our admin team file your declaration
               </p>
+              <Link href={`/dashboard/tax-declarations/${year}/${month}/pay`}>
+                <Button variant="primary">
+                  Pay {formatTaxAmount(declaration.payment_amount)} Now
+                </Button>
+              </Link>
             </div>
-          </li>
-          <li className="flex items-start gap-3">
-            <span className="flex-shrink-0 w-6 h-6 bg-[#003049] text-white rounded-full flex items-center justify-center text-xs font-medium">
-              2
-            </span>
-            <div>
-              <p className="font-medium">Navigate to Declarations</p>
-              <p className="text-gray-600">
-                Find the small business tax declaration section
-              </p>
-            </div>
-          </li>
-          <li className="flex items-start gap-3">
-            <span className="flex-shrink-0 w-6 h-6 bg-[#003049] text-white rounded-full flex items-center justify-center text-xs font-medium">
-              3
-            </span>
-            <div>
-              <p className="font-medium">Enter Income Amount</p>
-              <p className="text-gray-600">
-                Report total income of{" "}
-                <strong>{formatTaxAmount(declaration.income_gel)}</strong> for{" "}
-                {declaration.month_name}
-              </p>
-            </div>
-          </li>
-          <li className="flex items-start gap-3">
-            <span className="flex-shrink-0 w-6 h-6 bg-[#003049] text-white rounded-full flex items-center justify-center text-xs font-medium">
-              4
-            </span>
-            <div>
-              <p className="font-medium">Confirm Tax Amount</p>
-              <p className="text-gray-600">
-                Tax due should be{" "}
-                <strong>{formatTaxAmount(declaration.tax_due_gel)}</strong> (1%
-                of income)
-              </p>
-            </div>
-          </li>
-          <li className="flex items-start gap-3">
-            <span className="flex-shrink-0 w-6 h-6 bg-[#003049] text-white rounded-full flex items-center justify-center text-xs font-medium">
-              5
-            </span>
-            <div>
-              <p className="font-medium">Submit Declaration</p>
-              <p className="text-gray-600">
-                Complete and submit your declaration, then mark it as submitted
-                here
-              </p>
-            </div>
-          </li>
-        </ol>
-        </Card>
-      )}
+          </Card>
+        )}
 
       {/* Related Links */}
       <Card>
