@@ -15,17 +15,24 @@ import {
   MonthlyStatsResponse,
 } from "@/types/transaction";
 import { TransactionService } from "@/services/transaction.service";
+import { TaxOverview } from "@/types/tax";
+import { TaxService } from "@/services/tax.service";
+import { ThresholdProgress } from "@/components/tax/ThresholdProgress";
+import { Badge } from "@/components/ui/Badge";
+import { getTaxStatusLabel } from "@/types/tax";
 
 export default function Dashboard() {
   const [currentMonth, setCurrentMonth] = useState<CurrentMonthStats | null>(null);
   const [chartData, setChartData] = useState<ChartData | null>(null);
   const [stats, setStats] = useState<TransactionStatistics | null>(null);
   const [monthlyData, setMonthlyData] = useState<MonthlyStatsResponse | null>(null);
+  const [taxOverview, setTaxOverview] = useState<TaxOverview | null>(null);
 
   const [currentMonthLoading, setCurrentMonthLoading] = useState(true);
   const [chartLoading, setChartLoading] = useState(true);
   const [statsLoading, setStatsLoading] = useState(true);
   const [monthlyLoading, setMonthlyLoading] = useState(true);
+  const [taxLoading, setTaxLoading] = useState(true);
 
   const [error, setError] = useState("");
 
@@ -92,6 +99,17 @@ export default function Dashboard() {
     } finally {
       setMonthlyLoading(false);
     }
+
+    // Load tax overview
+    try {
+      setTaxLoading(true);
+      const taxData = await TaxService.getOverview();
+      setTaxOverview(taxData);
+    } catch (err) {
+      console.error("Failed to load tax overview:", err);
+    } finally {
+      setTaxLoading(false);
+    }
   };
 
   return (
@@ -118,6 +136,97 @@ export default function Dashboard() {
 
       {/* Error Alert */}
       {error && <Alert type="error" message={error} onClose={() => setError("")} />}
+
+      {/* Tax Overview Summary */}
+      {taxOverview && !taxLoading && (
+        <Card hoverable={false} className="bg-gradient-to-br from-[#003049]/5 to-white">
+          <div className="flex items-start justify-between mb-4">
+            <div>
+              <h2 className="text-lg font-medium uppercase tracking-wide text-[#003049]">
+                Tax Status {taxOverview.year}
+              </h2>
+              <p className="text-xs text-gray-600 mt-1">
+                Georgian Small Business • 1% Tax Rate
+              </p>
+            </div>
+            <Badge
+              variant={
+                taxOverview.status === "on_track"
+                  ? "success"
+                  : taxOverview.status === "exceeded"
+                  ? "danger"
+                  : "warning"
+              }
+            >
+              {getTaxStatusLabel(taxOverview.status)}
+            </Badge>
+          </div>
+
+          <div className="grid md:grid-cols-4 gap-4 mb-4">
+            <div className="text-center">
+              <ThresholdProgress
+                percentage={taxOverview.threshold_percentage_used}
+                status={taxOverview.status}
+                size="small"
+              />
+              <p className="text-xs font-medium uppercase tracking-wide text-gray-500 mt-2">
+                Threshold Used
+              </p>
+              <p className="text-lg font-medium text-gray-900 mt-1">
+                {taxOverview.threshold_percentage_used.toFixed(1)}%
+              </p>
+            </div>
+
+            <div className="text-center">
+              <p className="text-xs font-medium uppercase tracking-wide text-gray-500 mb-2">
+                Income YTD
+              </p>
+              <p className="text-lg font-medium text-green-600">
+                ₾{taxOverview.total_income_ytd_gel.toLocaleString()}
+              </p>
+            </div>
+
+            <div className="text-center">
+              <p className="text-xs font-medium uppercase tracking-wide text-gray-500 mb-2">
+                Tax Due
+              </p>
+              <p className="text-lg font-medium text-[#003049]">
+                ₾{taxOverview.tax_liability_ytd_gel.toLocaleString()}
+              </p>
+            </div>
+
+            <div className="text-center">
+              <p className="text-xs font-medium uppercase tracking-wide text-gray-500 mb-2">
+                Pending
+              </p>
+              <p className="text-lg font-medium text-amber-600">
+                {taxOverview.months_pending} {taxOverview.months_pending === 1 ? "month" : "months"}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between pt-4 border-t-2 border-gray-200">
+            <p className="text-xs text-gray-600">
+              {taxOverview.next_declaration_due && (
+                <>
+                  Next deadline:{" "}
+                  <span className="font-medium text-[#4e35dc]">
+                    {new Date(taxOverview.next_declaration_due).toLocaleDateString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                    })}
+                  </span>
+                </>
+              )}
+            </p>
+            <Link href="/dashboard/tax-overview">
+              <button className="text-xs text-[#4e35dc] hover:underline font-medium">
+                View Tax Dashboard →
+              </button>
+            </Link>
+          </div>
+        </Card>
+      )}
 
       {/* Current Month Overview */}
       {currentMonth && (
@@ -300,7 +409,7 @@ export default function Dashboard() {
         <h2 className="text-lg font-medium uppercase tracking-wide mb-4">
           Quick Actions
         </h2>
-        <div className="grid md:grid-cols-3 gap-4">
+        <div className="grid md:grid-cols-4 gap-4">
           <Link href="/dashboard/transactions">
             <button className="w-full p-4 text-left border-2 border-gray-200 rounded-[9px] hover:border-[#003049] hover:shadow-lg transition-all duration-200">
               <div className="flex items-center gap-3">
@@ -323,7 +432,35 @@ export default function Dashboard() {
                   <p className="text-sm font-medium uppercase tracking-wide">
                     Add Income
                   </p>
-                  <p className="text-xs text-gray-500">Record new transaction</p>
+                  <p className="text-xs text-gray-500">Record transaction</p>
+                </div>
+              </div>
+            </button>
+          </Link>
+
+          <Link href="/dashboard/tax-overview">
+            <button className="w-full p-4 text-left border-2 border-gray-200 rounded-[9px] hover:border-[#003049] hover:shadow-lg transition-all duration-200 bg-[#003049]/5">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-[#003049] rounded-[1px] flex items-center justify-center">
+                  <svg
+                    className="w-5 h-5 text-white"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"
+                    />
+                  </svg>
+                </div>
+                <div>
+                  <p className="text-sm font-medium uppercase tracking-wide">
+                    Tax Dashboard
+                  </p>
+                  <p className="text-xs text-gray-500">Declarations & status</p>
                 </div>
               </div>
             </button>
@@ -349,7 +486,7 @@ export default function Dashboard() {
                 </div>
                 <div>
                   <p className="text-sm font-medium uppercase tracking-wide">
-                    View Analytics
+                    Analytics
                   </p>
                   <p className="text-xs text-gray-500">Detailed insights</p>
                 </div>
@@ -377,7 +514,7 @@ export default function Dashboard() {
                 </div>
                 <div>
                   <p className="text-sm font-medium uppercase tracking-wide">
-                    View History
+                    History
                   </p>
                   <p className="text-xs text-gray-500">All transactions</p>
                 </div>
