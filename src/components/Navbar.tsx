@@ -50,6 +50,14 @@ export default function Navbar({ user }: NavbarProps) {
             >
               Transactions
             </Link>
+
+            {/* Analytics Link */}
+            <Link
+              href="/dashboard/analytics"
+              className="text-sm font-medium text-white uppercase tracking-wide hover:text-[#4e35dc] transition-colors duration-200"
+            >
+              Analytics
+            </Link>
           </div>
 
           {/* User Menu */}

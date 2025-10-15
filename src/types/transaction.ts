@@ -111,3 +111,52 @@ export function sortCurrencies(currencies: string[]): string[] {
   const others = currencies.filter((c) => !PRIORITY_CURRENCIES.includes(c)).sort();
   return [...priority, ...others];
 }
+
+// Analytics and Chart Types
+
+export interface MonthlyStats {
+  month: string; // YYYY-MM format
+  total_income_gel: number;
+  transaction_count: number;
+  avg_transaction_gel: number;
+  by_category: Record<string, number>;
+  currencies_used: string[];
+}
+
+export interface MonthlyStatsResponse {
+  months: MonthlyStats[];
+  total_months: number;
+  grand_total_gel: number;
+  avg_monthly_income_gel: number;
+}
+
+export interface CurrentMonthStats {
+  month: string; // YYYY-MM format
+  total_income_gel: number;
+  transaction_count: number;
+  avg_transaction_gel: number;
+  by_category: Record<string, number>;
+  currencies_used: string[];
+  days_elapsed: number;
+  days_in_month: number;
+  days_remaining: number;
+  daily_avg_gel: number;
+  projected_monthly_income_gel: number;
+  last_month_income_gel: number | null;
+  month_over_month_change: number | null; // percentage
+}
+
+export interface ChartDataPoint {
+  date: string; // YYYY-MM-DD format
+  income_gel: number;
+  transaction_count: number;
+}
+
+export interface ChartData {
+  chart_type: "daily" | "weekly" | "monthly";
+  period_start: string; // YYYY-MM-DD
+  period_end: string; // YYYY-MM-DD
+  data: ChartDataPoint[];
+  total_income_gel: number;
+  total_transactions: number;
+}

@@ -7,6 +7,9 @@ import {
   TransactionStatistics,
   TransactionStatisticsFilters,
   ExchangeRateResponse,
+  MonthlyStatsResponse,
+  CurrentMonthStats,
+  ChartData,
 } from "@/types/transaction";
 import { apiFetch } from "@/utils/api";
 
@@ -236,5 +239,65 @@ export class TransactionService {
       month: "short",
       day: "numeric",
     });
+  }
+
+  /**
+   * Get monthly statistics for a year
+   */
+  static async getMonthlyStatistics(
+    year?: number
+  ): Promise<MonthlyStatsResponse> {
+    const params = new URLSearchParams();
+    if (year !== undefined) params.append("year", String(year));
+
+    const queryString = params.toString();
+    const endpoint = `/transactions/stats/monthly${
+      queryString ? `?${queryString}` : ""
+    }`;
+
+    const response = await apiFetch(endpoint);
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch monthly statistics");
+    }
+
+    return response.json();
+  }
+
+  /**
+   * Get current month statistics with projections
+   */
+  static async getCurrentMonthStatistics(): Promise<CurrentMonthStats> {
+    const response = await apiFetch("/transactions/stats/current-month");
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch current month statistics");
+    }
+
+    return response.json();
+  }
+
+  /**
+   * Get chart data for time-series visualization
+   */
+  static async getChartData(
+    chartType: "daily" | "weekly" | "monthly" = "daily",
+    dateFrom?: string,
+    dateTo?: string
+  ): Promise<ChartData> {
+    const params = new URLSearchParams();
+    params.append("chart_type", chartType);
+    if (dateFrom) params.append("date_from", dateFrom);
+    if (dateTo) params.append("date_to", dateTo);
+
+    const response = await apiFetch(
+      `/transactions/stats/chart-data?${params.toString()}`
+    );
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch chart data");
+    }
+
+    return response.json();
   }
 }
