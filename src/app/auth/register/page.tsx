@@ -5,6 +5,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AuthService } from "@/services/auth.service";
+import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
+import { Alert } from "@/components/ui/Alert";
 
 export default function Register() {
   const router = useRouter();
@@ -35,14 +38,13 @@ export default function Register() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-8">
+    <div className="min-h-screen flex flex-col items-center justify-center p-8 bg-white">
       <div className="w-full max-w-md">
         <div className="mb-8 flex justify-center">
           <Link href="/">
             <Image
-              className="dark:invert"
               src="/next.svg"
-              alt="Next.js logo"
+              alt="Logo"
               width={120}
               height={25}
               priority
@@ -52,74 +54,50 @@ export default function Register() {
 
         <form
           onSubmit={handleSubmit}
-          className="bg-white dark:bg-black/20 p-8 rounded-lg shadow-lg border border-black/[.08] dark:border-white/[.1]"
+          className="bg-white p-8 rounded-sm shadow-lg border-2 border-gray-200"
         >
-          <h1 className="text-2xl font-bold mb-6 text-center">
+          <h1 className="text-2xl font-medium mb-6 text-center uppercase tracking-wide">
             Create Account
           </h1>
 
-          {error && (
-            <div className="mb-4 p-3 text-sm text-red-500 bg-red-100 dark:bg-red-900/30 rounded-md">
-              {error}
-            </div>
-          )}
+          {error && <Alert type="error" message={error} />}
 
           <div className="space-y-4">
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium mb-2">
-                Email
-              </label>
-              <input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md dark:bg-gray-900"
-                required
-              />
-            </div>
+            <Input
+              id="email"
+              label="Email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
 
-            <div>
-              <label
-                htmlFor="password"
-                className="block text-sm font-medium mb-2"
-              >
-                Password
-              </label>
-              <input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md dark:bg-gray-900"
-                required
-              />
-            </div>
+            <Input
+              id="password"
+              label="Password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
 
-            <div>
-              <label
-                htmlFor="confirmPassword"
-                className="block text-sm font-medium mb-2"
-              >
-                Confirm Password
-              </label>
-              <input
-                id="confirmPassword"
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md dark:bg-gray-900"
-                required
-              />
-            </div>
+            <Input
+              id="confirmPassword"
+              label="Confirm Password"
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              required
+            />
 
-            <button
+            <Button
               type="submit"
               disabled={loading}
-              className="w-full py-2 px-4 bg-foreground text-background rounded-md hover:bg-[#383838] dark:hover:bg-[#ccc] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              fullWidth
+              variant="primary"
             >
               {loading ? "Registering..." : "Register"}
-            </button>
+            </Button>
           </div>
         </form>
 
@@ -127,7 +105,7 @@ export default function Register() {
           Already have an account?{" "}
           <Link
             href="/auth/login"
-            className="text-blue-600 dark:text-blue-400 hover:underline"
+            className="text-accent hover:underline font-medium"
           >
             Sign in
           </Link>
