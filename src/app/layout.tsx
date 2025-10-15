@@ -10,8 +10,8 @@ const montserrat = Montserrat({
 });
 
 export const metadata: Metadata = {
-  title: "Frontend Template",
-  description: "Frontend basic template",
+  title: "Smallbusiness",
+  description: "Do your business in GEORGIA",
 };
 
 export default function RootLayout({
