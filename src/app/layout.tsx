@@ -10,7 +10,7 @@ const montserrat = Montserrat({
 });
 
 export const metadata: Metadata = {
-  title: "Smallbusiness",
+  title: "Small Business Services in Georgia",
   description: "Do your business in GEORGIA",
 };
 

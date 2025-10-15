@@ -40,11 +40,10 @@ function VerifyEmailContent() {
         <div className="mb-8 flex justify-center">
           <Link href="/">
             <Image
-              className="dark:invert"
-              src="/next.svg"
-              alt="Next.js logo"
-              width={120}
-              height={25}
+              src="/logo.png"
+              alt="Logo"
+              width={60}
+              height={60}
               priority
             />
           </Link>
@@ -104,11 +103,10 @@ function LoadingFallback() {
         <div className="mb-8 flex justify-center">
           <Link href="/">
             <Image
-              className="dark:invert"
-              src="/next.svg"
-              alt="Next.js logo"
-              width={120}
-              height={25}
+              src="/logo.png"
+              alt="Logo"
+              width={60}
+              height={60}
               priority
             />
           </Link>
