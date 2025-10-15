@@ -35,9 +35,14 @@ export function TaxInsightsPanel({
     );
   }
 
+  // Create unique ID for each insight
+  const getInsightId = (insight: TaxInsight, index: number) => {
+    return `${insight.type}-${insight.created_at}-${index}`;
+  };
+
   // Filter out dismissed insights
   const visibleInsights = insights.filter(
-    (insight) => !dismissedIds.has(insight.created_at)
+    (insight, index) => !dismissedIds.has(getInsightId(insight, index))
   );
 
   // Determine which insights to show
@@ -137,77 +142,80 @@ export function TaxInsightsPanel({
       </div>
 
       <div className="space-y-3">
-        {displayedInsights.map((insight) => (
-          <div
-            key={insight.created_at}
-            className={`p-4 border-2 rounded-[9px] ${getSeverityBgColor(
-              insight.severity
-            )}`}
-          >
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                {/* Title */}
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-lg">
-                    {getSeverityIcon(insight.severity)}
-                  </span>
-                  <h3
-                    className={`text-sm font-medium uppercase tracking-wide ${getSeverityTextColor(
-                      insight.severity
-                    )}`}
-                  >
-                    {insight.title}
-                  </h3>
+        {displayedInsights.map((insight, index) => {
+          const insightId = getInsightId(insight, insights.indexOf(insight));
+          return (
+            <div
+              key={insightId}
+              className={`p-4 border-2 rounded-[9px] ${getSeverityBgColor(
+                insight.severity
+              )}`}
+            >
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  {/* Title */}
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-lg">
+                      {getSeverityIcon(insight.severity)}
+                    </span>
+                    <h3
+                      className={`text-sm font-medium uppercase tracking-wide ${getSeverityTextColor(
+                        insight.severity
+                      )}`}
+                    >
+                      {insight.title}
+                    </h3>
+                  </div>
+
+                  {/* Message */}
+                  <p className="text-sm text-gray-700 mb-3">{insight.message}</p>
+
+                  {/* Action Button */}
+                  {insight.action_url && insight.action_text && (
+                    <Link href={insight.action_url}>
+                      <Button variant="secondary" className="text-xs py-1 px-3">
+                        {insight.action_text}
+                      </Button>
+                    </Link>
+                  )}
                 </div>
 
-                {/* Message */}
-                <p className="text-sm text-gray-700 mb-3">{insight.message}</p>
-
-                {/* Action Button */}
-                {insight.action_url && insight.action_text && (
-                  <Link href={insight.action_url}>
-                    <Button variant="secondary" className="text-xs py-1 px-3">
-                      {insight.action_text}
-                    </Button>
-                  </Link>
+                {/* Dismiss Button */}
+                {!insight.action_required && (
+                  <button
+                    onClick={() => handleDismiss(insightId)}
+                    className="ml-2 text-gray-400 hover:text-gray-600 transition-colors duration-200"
+                    aria-label="Dismiss"
+                  >
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M6 18L18 6M6 6l12 12"
+                      />
+                    </svg>
+                  </button>
                 )}
               </div>
 
-              {/* Dismiss Button */}
-              {!insight.action_required && (
-                <button
-                  onClick={() => handleDismiss(insight.created_at)}
-                  className="ml-2 text-gray-400 hover:text-gray-600 transition-colors duration-200"
-                  aria-label="Dismiss"
-                >
-                  <svg
-                    className="w-5 h-5"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M6 18L18 6M6 6l12 12"
-                    />
-                  </svg>
-                </button>
-              )}
+              {/* Timestamp */}
+              <p className="text-xs text-gray-500 mt-2">
+                {new Date(insight.created_at).toLocaleDateString("en-US", {
+                  month: "short",
+                  day: "numeric",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+              </p>
             </div>
-
-            {/* Timestamp */}
-            <p className="text-xs text-gray-500 mt-2">
-              {new Date(insight.created_at).toLocaleDateString("en-US", {
-                month: "short",
-                day: "numeric",
-                hour: "2-digit",
-                minute: "2-digit",
-              })}
-            </p>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {showAll && hasMore && (
