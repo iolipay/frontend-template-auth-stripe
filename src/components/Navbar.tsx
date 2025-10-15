@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { AuthService } from "@/services/auth.service";
@@ -41,9 +42,19 @@ export default function Navbar({ user }: NavbarProps) {
           <div className="flex items-center space-x-6">
             <Link
               href="/dashboard"
-              className="text-xl font-medium text-white uppercase tracking-wide hover:text-[#4e35dc] transition-colors duration-200"
+              className="flex items-center gap-3"
             >
-              Dashboard
+              <Image
+                src="/logo.png"
+                alt="Logo"
+                width={40}
+                height={40}
+                priority
+                className="hover:opacity-80 transition-opacity duration-200"
+              />
+              <span className="text-xl font-medium text-white uppercase tracking-wide hover:text-[#4e35dc] transition-colors duration-200">
+                Dashboard
+              </span>
             </Link>
             <Link
               href="/dashboard/chat"
