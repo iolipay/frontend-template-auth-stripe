@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { AuthService } from "@/services/auth.service";
 import type { UserResponse } from "@/types/auth";
 import Navbar from "@/components/Navbar";
@@ -12,8 +12,12 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
+  const pathname = usePathname();
   const [user, setUser] = useState<UserResponse | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // Check if current route is admin route
+  const isAdminRoute = pathname?.startsWith("/dashboard/admin");
 
   useEffect(() => {
     loadUserData();
@@ -39,6 +43,13 @@ export default function DashboardLayout({
     );
   }
 
+  // If admin route, don't wrap with regular dashboard layout
+  // Admin layout handles its own navigation
+  if (isAdminRoute) {
+    return <>{children}</>;
+  }
+
+  // Regular dashboard layout with navbar
   return (
     <div>
       <Navbar user={user} />

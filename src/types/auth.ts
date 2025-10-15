@@ -8,6 +8,7 @@ export interface UserResponse {
   id: string;
   created_at: string;
   is_verified: boolean;
+  is_admin?: boolean;
 }
 
 export interface AuthError {

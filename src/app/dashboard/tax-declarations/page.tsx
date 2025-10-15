@@ -68,6 +68,21 @@ export default function TaxDeclarationsPage() {
     overdue:
       monthlyData?.months.filter((m) => m.declaration_status === "overdue")
         .length || 0,
+    awaiting_payment:
+      monthlyData?.months.filter((m) => m.declaration_status === "awaiting_payment")
+        .length || 0,
+    payment_received:
+      monthlyData?.months.filter((m) => m.declaration_status === "payment_received")
+        .length || 0,
+    in_progress:
+      monthlyData?.months.filter((m) => m.declaration_status === "in_progress")
+        .length || 0,
+    filed_by_admin:
+      monthlyData?.months.filter((m) => m.declaration_status === "filed_by_admin")
+        .length || 0,
+    rejected:
+      monthlyData?.months.filter((m) => m.declaration_status === "rejected")
+        .length || 0,
   };
 
   // Available years
@@ -209,6 +224,56 @@ export default function TaxDeclarationsPage() {
             }`}
           >
             Overdue ({statusCounts.overdue})
+          </button>
+          <button
+            onClick={() => setStatusFilter("awaiting_payment")}
+            className={`px-4 py-2 text-sm font-medium uppercase tracking-wide rounded-[1px] border-2 transition-all duration-200 ${
+              statusFilter === "awaiting_payment"
+                ? "bg-blue-500 text-white border-blue-500"
+                : "bg-white text-blue-600 border-blue-300 hover:border-blue-500"
+            }`}
+          >
+            Awaiting Payment ({statusCounts.awaiting_payment})
+          </button>
+          <button
+            onClick={() => setStatusFilter("payment_received")}
+            className={`px-4 py-2 text-sm font-medium uppercase tracking-wide rounded-[1px] border-2 transition-all duration-200 ${
+              statusFilter === "payment_received"
+                ? "bg-violet-500 text-white border-violet-500"
+                : "bg-white text-violet-600 border-violet-300 hover:border-violet-500"
+            }`}
+          >
+            Payment Received ({statusCounts.payment_received})
+          </button>
+          <button
+            onClick={() => setStatusFilter("in_progress")}
+            className={`px-4 py-2 text-sm font-medium uppercase tracking-wide rounded-[1px] border-2 transition-all duration-200 ${
+              statusFilter === "in_progress"
+                ? "bg-cyan-500 text-white border-cyan-500"
+                : "bg-white text-cyan-600 border-cyan-300 hover:border-cyan-500"
+            }`}
+          >
+            In Progress ({statusCounts.in_progress})
+          </button>
+          <button
+            onClick={() => setStatusFilter("filed_by_admin")}
+            className={`px-4 py-2 text-sm font-medium uppercase tracking-wide rounded-[1px] border-2 transition-all duration-200 ${
+              statusFilter === "filed_by_admin"
+                ? "bg-green-600 text-white border-green-600"
+                : "bg-white text-green-700 border-green-300 hover:border-green-600"
+            }`}
+          >
+            Filed by Admin ({statusCounts.filed_by_admin})
+          </button>
+          <button
+            onClick={() => setStatusFilter("rejected")}
+            className={`px-4 py-2 text-sm font-medium uppercase tracking-wide rounded-[1px] border-2 transition-all duration-200 ${
+              statusFilter === "rejected"
+                ? "bg-red-600 text-white border-red-600"
+                : "bg-white text-red-700 border-red-300 hover:border-red-600"
+            }`}
+          >
+            Rejected ({statusCounts.rejected})
           </button>
         </div>
       </Card>

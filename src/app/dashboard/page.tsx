@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -20,8 +21,10 @@ import { TaxService } from "@/services/tax.service";
 import { ThresholdProgress } from "@/components/tax/ThresholdProgress";
 import { Badge } from "@/components/ui/Badge";
 import { getTaxStatusLabel } from "@/types/tax";
+import { AuthService } from "@/services/auth.service";
 
 export default function Dashboard() {
+  const router = useRouter();
   const [currentMonth, setCurrentMonth] = useState<CurrentMonthStats | null>(null);
   const [chartData, setChartData] = useState<ChartData | null>(null);
   const [stats, setStats] = useState<TransactionStatistics | null>(null);
@@ -35,10 +38,31 @@ export default function Dashboard() {
   const [taxLoading, setTaxLoading] = useState(true);
 
   const [error, setError] = useState("");
+  const [checkingAdmin, setCheckingAdmin] = useState(true);
 
   useEffect(() => {
-    loadDashboardData();
+    checkIfAdmin();
   }, []);
+
+  const checkIfAdmin = async () => {
+    try {
+      const user = await AuthService.getCurrentUser();
+
+      // If user is admin, redirect to admin dashboard
+      if (user.is_admin) {
+        router.push("/dashboard/admin");
+        return;
+      }
+
+      // User is not admin, load regular dashboard
+      setCheckingAdmin(false);
+      loadDashboardData();
+    } catch (error) {
+      console.error("Failed to check user role:", error);
+      setCheckingAdmin(false);
+      loadDashboardData();
+    }
+  };
 
   const loadDashboardData = async () => {
     // Load current month data
@@ -111,6 +135,20 @@ export default function Dashboard() {
       setTaxLoading(false);
     }
   };
+
+  // Show loading while checking admin status
+  if (checkingAdmin) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-[#003049] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-sm text-gray-600 uppercase tracking-wide">
+            Loading Dashboard...
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

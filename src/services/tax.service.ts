@@ -8,6 +8,11 @@ import {
   MarkSubmittedRequest,
   MarkSubmittedResponse,
   TaxChartData,
+  FilingServiceRequest,
+  FilingServiceRequestResponse,
+  PaymentRequest,
+  PaymentResponse,
+  FilingStatusResponse,
 } from "@/types/tax";
 import { apiFetch } from "@/utils/api";
 
@@ -285,5 +290,106 @@ export class TaxService {
   static getRecentYears(count: number = 3): number[] {
     const currentYear = this.getCurrentYear();
     return Array.from({ length: count }, (_, i) => currentYear - i);
+  }
+
+  /**
+   * Request admin filing service for a declaration
+   * User initiates payment flow (50 GEL)
+   */
+  static async requestFilingService(
+    year: number,
+    month: number
+  ): Promise<FilingServiceRequestResponse> {
+    const response = await apiFetch("/tax-stats/filing-service/request", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ year, month }),
+    });
+
+    const responseData = await response.json();
+
+    if (!response.ok) {
+      const errorMessage =
+        typeof responseData.detail === "string"
+          ? responseData.detail
+          : "Failed to request filing service";
+      throw new Error(errorMessage);
+    }
+
+    return responseData;
+  }
+
+  /**
+   * Complete mock payment for filing service
+   * Changes status from awaiting_payment to payment_received
+   */
+  static async payForFilingService(
+    year: number,
+    month: number
+  ): Promise<PaymentResponse> {
+    const response = await apiFetch("/tax-stats/filing-service/pay", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ year, month }),
+    });
+
+    const responseData = await response.json();
+
+    if (!response.ok) {
+      const errorMessage =
+        typeof responseData.detail === "string"
+          ? responseData.detail
+          : "Failed to process payment";
+      throw new Error(errorMessage);
+    }
+
+    return responseData;
+  }
+
+  /**
+   * Get filing service status for a declaration
+   */
+  static async getFilingServiceStatus(
+    year: number,
+    month: number
+  ): Promise<FilingStatusResponse> {
+    const response = await apiFetch(
+      `/tax-stats/filing-service/status/${year}/${month}`
+    );
+
+    if (!response.ok) {
+      const responseData = await response.json();
+      const errorMessage =
+        typeof responseData.detail === "string"
+          ? responseData.detail
+          : "Failed to fetch filing service status";
+      throw new Error(errorMessage);
+    }
+
+    return response.json();
+  }
+
+  /**
+   * Check if declaration is admin-managed
+   */
+  static isAdminManaged(status: string): boolean {
+    return [
+      "awaiting_payment",
+      "payment_received",
+      "in_progress",
+      "filed_by_admin",
+      "rejected",
+    ].includes(status);
+  }
+
+  /**
+   * Get filing service cost
+   */
+  static getFilingServiceCost(): number {
+    return 50.0; // GEL
   }
 }

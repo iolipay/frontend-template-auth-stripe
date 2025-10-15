@@ -4,7 +4,19 @@
 
 export type TaxStatus = "on_track" | "approaching_limit" | "near_limit" | "exceeded";
 
-export type DeclarationStatus = "pending" | "submitted" | "overdue";
+export type DeclarationStatus =
+  | "pending"
+  | "submitted"
+  | "overdue"
+  | "awaiting_payment"
+  | "payment_received"
+  | "in_progress"
+  | "filed_by_admin"
+  | "rejected";
+
+export type PaymentStatus = "unpaid" | "paid" | "refunded";
+
+export type FilingMethod = "self_service" | "admin_filed";
 
 export type InsightType =
   | "declaration_reminder"
@@ -111,6 +123,18 @@ export interface DeclarationDetail {
   submitted_date: string | null;
   days_until_deadline: number | null;
   is_overdue: boolean;
+  // Payment fields
+  payment_status: PaymentStatus;
+  payment_amount: number;
+  payment_date: string | null;
+  mock_payment_id: string | null;
+  // Admin filing fields
+  filing_method: FilingMethod;
+  filed_by_admin_id: string | null;
+  filed_by_admin_at: string | null;
+  admin_notes: string;
+  requires_correction: boolean;
+  correction_notes: string;
 }
 
 export interface MarkSubmittedRequest {
@@ -137,6 +161,92 @@ export interface TaxChartData {
   data: TaxChartDataPoint[];
   total_income: number;
   total_tax: number;
+}
+
+// Admin Filing Service Types
+export interface FilingServiceRequest {
+  year: number;
+  month: number;
+}
+
+export interface FilingServiceRequestResponse {
+  declaration_id: string;
+  payment_id: string;
+  amount: number;
+  status: string;
+  message: string;
+}
+
+export interface PaymentRequest {
+  year: number;
+  month: number;
+}
+
+export interface PaymentResponse {
+  declaration_id: string;
+  payment_id: string;
+  amount: number;
+  status: string;
+  paid_at: string;
+  message: string;
+}
+
+export interface FilingStatusResponse {
+  year: number;
+  month: number;
+  status: DeclarationStatus;
+  payment_status: PaymentStatus;
+  payment_amount: number;
+  payment_date: string | null;
+  filing_method: FilingMethod;
+  filed_by_admin_at: string | null;
+  requires_correction: boolean;
+  correction_notes: string;
+  admin_notes: string;
+}
+
+export interface AdminDeclarationItem {
+  id: string;
+  user_id: string;
+  user_email: string;
+  year: number;
+  month: number;
+  income_gel: number;
+  tax_due_gel: number;
+  status: DeclarationStatus;
+  filing_deadline: string;
+  payment_status: PaymentStatus;
+  payment_amount: number;
+  payment_date: string | null;
+  submitted_date: string | null;
+  requires_correction: boolean;
+  transaction_count: number;
+}
+
+export interface AdminDeclarationQueueResponse {
+  pending_payment: AdminDeclarationItem[];
+  ready_to_file: AdminDeclarationItem[];
+  in_progress: AdminDeclarationItem[];
+  needs_correction: AdminDeclarationItem[];
+  total_count: number;
+}
+
+export interface StartFilingRequest {
+  declaration_id: string;
+}
+
+export interface CompleteFilingRequest {
+  confirmation_number?: string;
+  admin_notes?: string;
+}
+
+export interface RejectFilingRequest {
+  correction_notes: string;
+  admin_notes?: string;
+}
+
+export interface AdminActionResponse {
+  message: string;
 }
 
 // Constants for Georgian tax system
@@ -183,6 +293,16 @@ export function getDeclarationStatusColor(status: DeclarationStatus): string {
       return "#10b981"; // green-600
     case "overdue":
       return "#ef4444"; // red-500
+    case "awaiting_payment":
+      return "#3b82f6"; // blue-500
+    case "payment_received":
+      return "#8b5cf6"; // violet-500
+    case "in_progress":
+      return "#06b6d4"; // cyan-500
+    case "filed_by_admin":
+      return "#10b981"; // green-600
+    case "rejected":
+      return "#dc2626"; // red-600
   }
 }
 
@@ -194,6 +314,16 @@ export function getDeclarationStatusLabel(status: DeclarationStatus): string {
       return "Submitted";
     case "overdue":
       return "Overdue";
+    case "awaiting_payment":
+      return "Awaiting Payment";
+    case "payment_received":
+      return "Payment Received";
+    case "in_progress":
+      return "In Progress";
+    case "filed_by_admin":
+      return "Filed by Admin";
+    case "rejected":
+      return "Rejected";
   }
 }
 

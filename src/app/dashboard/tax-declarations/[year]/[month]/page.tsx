@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/Button";
 import { Alert } from "@/components/ui/Alert";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
+import { FilingServiceCard } from "@/components/tax/FilingServiceCard";
+import { PaymentFlow } from "@/components/tax/PaymentFlow";
 import {
   DeclarationDetail,
   formatTaxAmount,
@@ -319,7 +321,7 @@ export default function DeclarationDetailPage() {
             </div>
           )}
 
-        {declaration.is_overdue && (
+        {declaration.is_overdue && declaration.declaration_status !== "rejected" && (
           <div className="p-4 bg-red-50 border-2 border-red-200 rounded-[9px]">
             <h3 className="text-sm font-medium uppercase tracking-wide text-red-800 mb-2">
               ⚠️ Declaration Overdue
@@ -347,13 +349,124 @@ export default function DeclarationDetailPage() {
             </Button>
           </div>
         )}
+
+        {/* Payment Received - Waiting for Admin */}
+        {declaration.declaration_status === "payment_received" && (
+          <div className="p-4 bg-violet-50 border-2 border-violet-200 rounded-[9px]">
+            <h3 className="text-sm font-medium uppercase tracking-wide text-violet-800 mb-2">
+              ✓ Payment Received - In Admin Queue
+            </h3>
+            <p className="text-sm text-gray-700">
+              Your payment has been received. Your declaration is in the admin filing
+              queue and will be filed on RS.ge by our team soon.
+            </p>
+            {declaration.payment_date && (
+              <p className="text-xs text-gray-600 mt-2">
+                Payment completed on{" "}
+                {new Date(declaration.payment_date).toLocaleDateString("en-US", {
+                  month: "long",
+                  day: "numeric",
+                  year: "numeric",
+                })}
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* In Progress - Admin is Filing */}
+        {declaration.declaration_status === "in_progress" && (
+          <div className="p-4 bg-cyan-50 border-2 border-cyan-200 rounded-[9px]">
+            <h3 className="text-sm font-medium uppercase tracking-wide text-cyan-800 mb-2">
+              🔄 Admin is Filing Your Declaration
+            </h3>
+            <p className="text-sm text-gray-700">
+              Our admin team is currently filing your declaration on RS.ge. You'll be
+              notified once it's complete.
+            </p>
+          </div>
+        )}
+
+        {/* Filed by Admin - Complete */}
+        {declaration.declaration_status === "filed_by_admin" && (
+          <div className="p-4 bg-green-50 border-2 border-green-200 rounded-[9px]">
+            <h3 className="text-sm font-medium uppercase tracking-wide text-green-800 mb-2">
+              ✓ Filed by Admin Team
+            </h3>
+            <p className="text-sm text-gray-700 mb-2">
+              Your declaration was successfully filed on RS.ge by our admin team
+              {declaration.filed_by_admin_at &&
+                ` on ${new Date(declaration.filed_by_admin_at).toLocaleDateString("en-US", {
+                  month: "long",
+                  day: "numeric",
+                  year: "numeric",
+                })}`}
+              .
+            </p>
+            {declaration.admin_notes && (
+              <div className="mt-3 p-3 bg-white border border-green-200 rounded-[9px]">
+                <p className="text-xs font-medium uppercase tracking-wide text-gray-500 mb-1">
+                  Admin Notes
+                </p>
+                <p className="text-sm text-gray-700">{declaration.admin_notes}</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Rejected - Needs Correction */}
+        {declaration.declaration_status === "rejected" && (
+          <div className="p-4 bg-red-50 border-2 border-red-200 rounded-[9px]">
+            <h3 className="text-sm font-medium uppercase tracking-wide text-red-800 mb-2">
+              ⚠️ Corrections Required
+            </h3>
+            <p className="text-sm text-gray-700 mb-3">
+              Your declaration has been reviewed and requires corrections before filing.
+            </p>
+            {declaration.correction_notes && (
+              <div className="mt-3 p-3 bg-white border border-red-200 rounded-[9px]">
+                <p className="text-xs font-medium uppercase tracking-wide text-gray-500 mb-1">
+                  Correction Notes
+                </p>
+                <p className="text-sm text-gray-700">{declaration.correction_notes}</p>
+              </div>
+            )}
+            <div className="mt-4">
+              <Link href="/dashboard/transactions">
+                <Button variant="primary">Fix Transaction Data</Button>
+              </Link>
+            </div>
+          </div>
+        )}
       </Card>
 
-      {/* How to File */}
-      <Card>
-        <h2 className="text-lg font-medium uppercase tracking-wide mb-4">
-          How to File This Declaration
-        </h2>
+      {/* Filing Service Cards (Only for pending/awaiting_payment) */}
+      {declaration.declaration_status === "pending" && (
+        <FilingServiceCard
+          year={year}
+          month={month}
+          income={declaration.income_gel}
+          taxDue={declaration.tax_due_gel}
+          onRequestSuccess={loadDeclaration}
+        />
+      )}
+
+      {declaration.declaration_status === "awaiting_payment" &&
+        declaration.mock_payment_id && (
+          <PaymentFlow
+            year={year}
+            month={month}
+            amount={declaration.payment_amount}
+            paymentId={declaration.mock_payment_id}
+            onPaymentSuccess={loadDeclaration}
+          />
+        )}
+
+      {/* How to File (only for self-service) */}
+      {!TaxService.isAdminManaged(declaration.declaration_status) && (
+        <Card>
+          <h2 className="text-lg font-medium uppercase tracking-wide mb-4">
+            How to File This Declaration
+          </h2>
         <ol className="space-y-3 text-sm text-gray-700">
           <li className="flex items-start gap-3">
             <span className="flex-shrink-0 w-6 h-6 bg-[#003049] text-white rounded-full flex items-center justify-center text-xs font-medium">
@@ -424,7 +537,8 @@ export default function DeclarationDetailPage() {
             </div>
           </li>
         </ol>
-      </Card>
+        </Card>
+      )}
 
       {/* Related Links */}
       <Card>
