@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Alert } from "@/components/ui/Alert";
+import { TelegramIntegration } from "@/components/telegram/TelegramIntegration";
 
 export default function Profile() {
   const [user, setUser] = useState<UserResponse | null>(null);
@@ -160,6 +161,9 @@ export default function Profile() {
           )}
         </Card>
       )}
+
+      {/* Telegram Integration Section */}
+      <TelegramIntegration />
     </div>
   );
 }
