@@ -24,23 +24,33 @@ export default function Navbar({ user }: NavbarProps) {
     <nav className="bg-[#003049] border-b-2 border-black py-4">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center">
-          {/* Logo and App Name */}
-          <Link
-            href="/dashboard"
-            className="flex items-center gap-3"
-          >
-            <Image
-              src="/logo.png"
-              alt="Logo"
-              width={40}
-              height={40}
-              priority
-              className="hover:opacity-80 transition-opacity duration-200"
-            />
-            <span className="text-xl font-medium text-white uppercase tracking-wide hover:text-[#4e35dc] transition-colors duration-200">
-              Smallbusiness
-            </span>
-          </Link>
+          {/* Logo and Navigation */}
+          <div className="flex items-center space-x-6">
+            <Link
+              href="/dashboard"
+              className="flex items-center gap-3"
+            >
+              <Image
+                src="/logo.png"
+                alt="Logo"
+                width={40}
+                height={40}
+                priority
+                className="hover:opacity-80 transition-opacity duration-200"
+              />
+              <span className="text-xl font-medium text-white uppercase tracking-wide hover:text-[#4e35dc] transition-colors duration-200">
+                Smallbusiness
+              </span>
+            </Link>
+
+            {/* Transactions Link */}
+            <Link
+              href="/dashboard/transactions"
+              className="text-sm font-medium text-white uppercase tracking-wide hover:text-[#4e35dc] transition-colors duration-200"
+            >
+              Transactions
+            </Link>
+          </div>
 
           {/* User Menu */}
           <div className="relative">

@@ -63,6 +63,17 @@ export function TransactionForm({ onSuccess, onCancel }: TransactionFormProps) {
       return;
     }
 
+    // Validate date is not in the future
+    const selectedDate = new Date(transactionDate);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Reset time to start of day for fair comparison
+    selectedDate.setHours(0, 0, 0, 0);
+
+    if (selectedDate > today) {
+      setError("Income date cannot be in the future");
+      return;
+    }
+
     try {
       setLoading(true);
 
